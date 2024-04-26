@@ -1,0 +1,105 @@
+﻿  genFootPoint.cpp
+D:\Docs\task\replay_3experiments\3-5month\c_plus_plus_code\genfootpoint\genfootpoint\genFootPoint.cpp(76,27): warning C4244: “=”: 从“_Ty”转换到“int”，可能丢失数据
+          with
+          [
+              _Ty=double
+          ]
+D:\Docs\task\replay_3experiments\3-5month\c_plus_plus_code\genfootpoint\genfootpoint\genFootPoint.cpp(86,28): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+D:\Docs\task\replay_3experiments\3-5month\c_plus_plus_code\genfootpoint\genfootpoint\genFootPoint.cpp(125,28): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+D:\Docs\task\replay_3experiments\3-5month\c_plus_plus_code\genfootpoint\genfootpoint\genFootPoint.cpp(161,35): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+D:\Docs\task\replay_3experiments\3-5month\c_plus_plus_code\genfootpoint\genfootpoint\genFootPoint.cpp(179,28): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+D:\Docs\task\replay_3experiments\3-5month\c_plus_plus_code\genfootpoint\genfootpoint\genFootPoint.cpp(429,26): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(144,47): warning C4244: “初始化”: 从“_Ty”转换到“_Ty”，可能丢失数据
+          with
+          [
+              _Ty=double
+          ]
+          and
+          [
+              _Ty=int
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(239): message : 查看对正在编译的函数 模板 实例化“std::_Tuple_val<_This>::_Tuple_val<_Ty>(_Other &&)”的引用
+          with
+          [
+              _This=int,
+              _Ty=double,
+              _Other=double
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(239,81): message : 查看对正在编译的函数 模板 实例化“std::_Tuple_val<_This>::_Tuple_val<_Ty>(_Other &&)”的引用
+          with
+          [
+              _This=int,
+              _Ty=double,
+              _Other=double
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(239): message : 查看对正在编译的函数 模板 实例化“std::tuple<int,posDirect,int,int>::tuple<std::_Exact_args_t,_Ty,posDirect,_Ty,int,0>(_Tag,_This2 &&,posDirect &&,_Ty &&,int &&)”的引用
+          with
+          [
+              _Ty=double,
+              _Tag=std::_Exact_args_t,
+              _This2=double
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(239,18): message : 查看对正在编译的函数 模板 实例化“std::tuple<int,posDirect,int,int>::tuple<std::_Exact_args_t,_Ty,posDirect,_Ty,int,0>(_Tag,_This2 &&,posDirect &&,_Ty &&,int &&)”的引用
+          with
+          [
+              _Ty=double,
+              _Tag=std::_Exact_args_t,
+              _This2=double
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(239): message : 查看对正在编译的函数 模板 实例化“std::tuple<posDirect,int,posDirect,int,int>::tuple<std::_Exact_args_t,_Ty,double,_Ty,double,int,0>(_Tag,_This2 &&,double &&,_Ty &&,double &&,int &&)”的引用
+          with
+          [
+              _Ty=posDirect,
+              _Tag=std::_Exact_args_t,
+              _This2=posDirect
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(239,18): message : 查看对正在编译的函数 模板 实例化“std::tuple<posDirect,int,posDirect,int,int>::tuple<std::_Exact_args_t,_Ty,double,_Ty,double,int,0>(_Tag,_This2 &&,double &&,_Ty &&,double &&,int &&)”的引用
+          with
+          [
+              _Ty=posDirect,
+              _Tag=std::_Exact_args_t,
+              _This2=posDirect
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(802): message : 查看对正在编译的函数 模板 实例化“std::tuple<int,posDirect,int,posDirect,int,int>::tuple<std::_Exact_args_t,int,posDirect,double,posDirect,double,int,0>(_Tag,_This2 &&,posDirect &&,double &&,posDirect &&,double &&,int &&)”的引用
+          with
+          [
+              _Tag=std::_Exact_args_t,
+              _This2=int
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(802,12): message : 查看对正在编译的函数 模板 实例化“std::tuple<int,posDirect,int,posDirect,int,int>::tuple<std::_Exact_args_t,int,posDirect,double,posDirect,double,int,0>(_Tag,_This2 &&,posDirect &&,double &&,posDirect &&,double &&,int &&)”的引用
+          with
+          [
+              _Tag=std::_Exact_args_t,
+              _This2=int
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(246): message : 查看对正在编译的函数 模板 实例化“std::tuple<int,posDirect,int,posDirect,int,int>::tuple<std::_Unpack_tuple_t,_Ty,0,1,2,3,4,5,0>(_Tag,_Tpl &&,std::integer_sequence<size_t,0,1,2,3,4,5>)”的引用
+          with
+          [
+              _Ty=std::tuple<int,posDirect,double,posDirect,double,int>,
+              _Tag=std::_Unpack_tuple_t,
+              _Tpl=std::tuple<int,posDirect,double,posDirect,double,int>
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(246,16): message : 查看对正在编译的函数 模板 实例化“std::tuple<int,posDirect,int,posDirect,int,int>::tuple<std::_Unpack_tuple_t,_Ty,0,1,2,3,4,5,0>(_Tag,_Tpl &&,std::integer_sequence<size_t,0,1,2,3,4,5>)”的引用
+          with
+          [
+              _Ty=std::tuple<int,posDirect,double,posDirect,double,int>,
+              _Tag=std::_Unpack_tuple_t,
+              _Tpl=std::tuple<int,posDirect,double,posDirect,double,int>
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(312): message : 查看对正在编译的函数 模板 实例化“std::tuple<int,posDirect,int,posDirect,int,int>::tuple<std::_Unpack_tuple_t,std::tuple<int,posDirect,double,posDirect,double,int>,0>(_Tag,_Tpl &&)”的引用
+          with
+          [
+              _Tag=std::_Unpack_tuple_t,
+              _Tpl=std::tuple<int,posDirect,double,posDirect,double,int>
+          ]
+D:\Software\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\tuple(312,16): message : 查看对正在编译的函数 模板 实例化“std::tuple<int,posDirect,int,posDirect,int,int>::tuple<std::_Unpack_tuple_t,std::tuple<int,posDirect,double,posDirect,double,int>,0>(_Tag,_Tpl &&)”的引用
+          with
+          [
+              _Tag=std::_Unpack_tuple_t,
+              _Tpl=std::tuple<int,posDirect,double,posDirect,double,int>
+          ]
+D:\Docs\task\replay_3experiments\3-5month\c_plus_plus_code\genfootpoint\genfootpoint\genFootPoint.cpp(197,74): message : 查看对正在编译的函数 模板 实例化“std::tuple<int,posDirect,int,posDirect,int,int>::tuple<int,posDirect,double,posDirect,double,int,0>(std::tuple<int,posDirect,double,posDirect,double,int> &&) noexcept”的引用
+D:\Docs\task\replay_3experiments\3-5month\c_plus_plus_code\genfootpoint\genfootpoint\genFootPoint.cpp(197,4): message : 查看对正在编译的函数 模板 实例化“std::tuple<int,posDirect,int,posDirect,int,int>::tuple<int,posDirect,double,posDirect,double,int,0>(std::tuple<int,posDirect,double,posDirect,double,int> &&) noexcept”的引用
+  genfootpoint.vcxproj -> D:\Docs\task\replay_3experiments\3-5month\c_plus_plus_code\genfootpoint\x64\Debug\genfootpoint.exe
+  'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
+  或批处理文件。
