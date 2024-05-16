@@ -6,11 +6,17 @@
 #include<cmath>
 #include<random>
 #include<tuple>
+#include<float.h>
+#include "head_system/Ethercat.h"
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
+#include <condition_variable>
 
 #define vs 0.4	// 直线行走速度，每步米/秒
 #define vc 0.1	// 曲线行走速度，每步米/秒
 #define lcTh 1* M_PI / 180;	// 直线路径和曲线路径转角区分阈值，单位：度
-using namespace std;
+head_system::Ethercat ethercatMsg;
 struct xy
 {
 	double x;
@@ -39,31 +45,31 @@ xy vecAsubB(xy a, xy b)
 	return res;
 }
 // str 为输入字符串，del为分隔符，返回分割之后的字符串数组
-vector<double> split(string str, char del) {
-	stringstream ss(str);
-	string tmp;
-	vector<double> res;
+std::vector<double> split(std::string str, char del) {
+	std::stringstream ss(str);
+	std::string tmp;
+	std::vector<double> res;
 	while (getline(ss, tmp, del)) {
 		res.push_back(stod(tmp));
 	}
 	return res;
 }
-void fileToData(vector<posDirect>& data, string filename)
+void fileToData(std::vector<posDirect>& data, std::string filename)
 {
-	ifstream csvData(filename, ios::in);
+	std::ifstream csvData(filename, std::ios::in);
 	if (!csvData.is_open())
 	{
-		cout << "Error: opening file fail" << endl;
+		std::cout << "Error: opening file fail" << std::endl;
 		exit(1);
 	}
 	else
 	{
-		string line, word;
-		stringstream sin;
+		std::string line, word;
+		std::stringstream sin;
 		posDirect newNode;
 		while (getline(csvData, line))
 		{
-			vector<double>dataVec = split(line, ',');
+			std::vector<double>dataVec = split(line, ',');
 			
 			newNode.pos.x = dataVec[0];
 			
@@ -81,7 +87,7 @@ void fileToData(vector<posDirect>& data, string filename)
 	}
 }
 //lcTh：直线路径和曲线路径转角区分阈值，单位：度
-std::tuple<double, double, double> getRoadLen(vector<posDirect>path)
+std::tuple<double, double, double> getRoadLen(std::vector<posDirect>path)
 {
 	int pathSize = path.size();
 	double L = 0;	// 路径长度
@@ -104,7 +110,7 @@ std::tuple<double, double, double> getRoadLen(vector<posDirect>path)
 	return std::make_tuple(L, Ll, Lc);
 }
 //搜索路径中离当前点最近的点，将当前点归到那一组去
-int searchNearestPos(int low, int high, xy cur, vector<posDirect>path)
+int searchNearestPos(int low, int high, xy cur, std::vector<posDirect>path)
 {
 	double minp = DBL_MAX;
 	int ret = -1;
@@ -120,10 +126,10 @@ int searchNearestPos(int low, int high, xy cur, vector<posDirect>path)
 	}
 	return ret;
 }
-std::tuple<posDirect, int> getOneFoot(vector<posDirect>path, int ind, posDirect cur, double v, int state_change)
+std::tuple<posDirect, int> getOneFoot(std::vector<posDirect>path, int ind, posDirect cur, double v, int state_change)
 {
 	int pathSize = path.size();
-	int lowInd = min(ind + 1, pathSize - 1);
+	int lowInd = std::min(ind + 1, pathSize - 1);
 	int i, e=pathSize-1;
 	posDirect ret;
 	for (i = lowInd; i < pathSize; i++)
@@ -151,23 +157,23 @@ std::tuple<posDirect, int> getOneFoot(vector<posDirect>path, int ind, posDirect 
 	{
 		ret = path[i];
 	}
-	return make_tuple(ret, state_change);
+	return std::make_tuple(ret, state_change);
 }
 //path是落后足的路径，返回落后足及前足的点位,state_change返回值得与之前的或一下
-std::tuple<posDirect, posDirect, int> getPosFit(vector<posDirect>path_behind, vector<posDirect>path_forward, posDirect cur_b, posDirect cur_f, int ind_b, int ind_f, double v_b, double v_f)
+std::tuple<posDirect, posDirect, int> getPosFit(std::vector<posDirect>path_behind, std::vector<posDirect>path_forward, posDirect cur_b, posDirect cur_f, int ind_b, int ind_f, double v_b, double v_f)
 {
 	posDirect pD_b, pD_f;
 	//落后足从当前位置开始向前搜索，直到运动长度达到指定步长
 	int pathSize = path_behind.size();
-	//int lowInd = min(ind_b + 1, pathSize - 1);
+	//int lowInd = std::min(ind_b + 1, pathSize - 1);
 	//int i, e;
 	int state_change = 0;
 	std::tie(pD_b, state_change) = getOneFoot(path_behind, ind_b, cur_b, v_b, state_change);
 	std::tie(pD_f, state_change) = getOneFoot(path_forward, ind_f, cur_f, v_f, state_change);
-	return make_tuple(pD_b, pD_f, state_change);
+	return std::make_tuple(pD_b, pD_f, state_change);
 }
 //vk=LR/LL LR\LL左右足完整轨迹中曲线段的长度
-std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDirect>left, vector<posDirect>right, posDirect Lcur, posDirect Rcur, double vk, int pll, int SC)
+std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, std::vector<posDirect>right, posDirect Lcur, posDirect Rcur, double vk, int pll, int SC)
 {
 	int FR = 0;	//先走哪一足，1 左足，-1 右足，0 不动
 	posDirect nextLeftF = Lcur, nextRightF = Rcur;
@@ -180,8 +186,8 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 
 	int lind = searchNearestPos(0, pathSize, Lcur.pos, left);
 	//在左足最近位置附近，在右足序列中找到与右足位置最近的点
-	int lowInd = max((int)(lind - 0.1 * pathSize), 0);
-	int highInd = min((int)(lind + 0.1 * pathSize), pathSize);
+	int lowInd = std::max((int)(lind - 0.1 * pathSize), 0);
+	int highInd = std::min((int)(lind + 0.1 * pathSize), pathSize);
 	int rind = searchNearestPos(lowInd, highInd, Rcur.pos, right);
 
 	double lv, rv;//左右脚速度
@@ -197,7 +203,7 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 			return std::make_tuple(FR, nextLeftF, lt, nextRightF, rt, stateChange);
 		}
 		//根据规划中下一点的状态，直线还是曲线，决定双足速度
-		if (left[min(lind + 1, pathSize - 1)].tag == -1 || right[min(rind + 1, pathSize - 1)].tag == -1)
+		if (left[std::min(lind + 1, pathSize - 1)].tag == -1 || right[std::min(rind + 1, pathSize - 1)].tag == -1)
 		{
 			// 曲线运动
 			lv = 0.5 * vc;// 左足权限运动，双足并列后，左足先动，运动半步
@@ -210,7 +216,7 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 			rv = vw * vs; // 右足正常
 		}
 		//左足从当前位置开始，向前搜索，直到运动长度达到指定步长
-		lowInd = min(lind + 1, pathSize - 1);
+		lowInd = std::min(lind + 1, pathSize - 1);
 
 		for (i = lowInd; i < pathSize; i++)
 		{
@@ -243,7 +249,7 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 			FR = 1;
 		}
 		//右足从当前位置开始向前搜索，直到运动长度达到指定步长
-		lowInd = min(rind + 1, pathSize - 1);
+		lowInd = std::min(rind + 1, pathSize - 1);
 		for (i = lowInd; i < pathSize; i++)
 		{
 			xy diff = vecAsubB(right[i].pos, Rcur.pos);
@@ -285,7 +291,7 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 		rt = 0;
 		FR = -1;
 		//如果在上次运动中发生的状态变化，则强制落后足一步并列，另一足不动
-		if (SC == 1 || left[lind].tag != left[min(lind + 1, pathSize - 1)].tag)
+		if (SC == 1 || left[lind].tag != left[std::min(lind + 1, pathSize - 1)].tag)
 		{
 			nextRightF = right[lind];
 			lt = 1;//左足不动
@@ -311,7 +317,7 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 		lt = 0;
 		FR = 1;
 		//如果在上次运动中发生的状态变化，则强制落后足一步并列，另一足不动
-		if (SC == 1 || right[lind].tag != right[min(lind + 1, pathSize - 1)].tag)
+		if (SC == 1 || right[lind].tag != right[std::min(lind + 1, pathSize - 1)].tag)
 		{
 			nextLeftF = left[rind];
 			rt = 1;//左足不动
@@ -363,7 +369,7 @@ xyz normal_xyz(xyz a)
 //flag：标志，1，正常，其他，异常
 //vx，vy，vz：分别是足坐标系的x，y，z轴在DEM坐标中的单位向量
 //R：足坐标系，x—前进方向，z—足地面发现方向，向上，y—与x，z形成右手坐标系
-std::tuple<int, xyz, xyz, xyz> get_R_Q2(posDirect cur, double z, xyz n, vector<vector<double>>& R, vector<double>& Q)
+std::tuple<int, xyz, xyz, xyz> get_R_Q2(posDirect cur, double z, xyz n, std::vector<std::vector<double>>& R, std::vector<double>& Q)
 {
 	int flag = 1;
 	double N = 1 / (sqrt(dotOfxyz(n, n)));
@@ -377,7 +383,7 @@ std::tuple<int, xyz, xyz, xyz> get_R_Q2(posDirect cur, double z, xyz n, vector<v
 	if (abs(a0) >= M_PI / 2)
 	{
 		flag = -1;
-		return make_tuple(flag, vx, vy, vz);
+		return std::make_tuple(flag, vx, vy, vz);
 	}
 
 	//
@@ -402,7 +408,7 @@ std::tuple<int, xyz, xyz, xyz> get_R_Q2(posDirect cur, double z, xyz n, vector<v
 	Q.push_back( 0.25 * (vy.z - vz.y) / Q[0]);
 	Q.push_back( 0.25 * (vz.x - vx.z) / Q[0]);
 	Q.push_back( 0.25 * (vx.y - vy.x) / Q[0]);
-	return make_tuple(flag, vx, vy, vz);
+	return std::make_tuple(flag, vx, vy, vz);
 }
 // 生成一个符合标准正态分布的随机数
 double generateNormalRandom()
@@ -423,25 +429,25 @@ xy addGaussinToSim(xy goalPos)
 	res.y = goalPos.y + 0.005 * generateNormalRandom();
 	return res;
 }
-void dataToFile(vector<posDirect>Path, string fname)
+void dataToFile(std::vector<posDirect>Path, std::string fname)
 {
-	std::ofstream outFile(fname, ios::out);
+	std::ofstream outFile(fname, std::ios::out);
 	int peSize = Path.size();
 	for (int i = 0; i < peSize; i++)
 	{
-		outFile << to_string(Path[i].pos.x) << ','
-			<< to_string(Path[i].pos.y) << ','
-			<< to_string(Path[i].direct.x) << ','
-			<< to_string(Path[i].direct.y) << ','
-			<< to_string(Path[i].tag) << endl;
+		outFile << std::to_string(Path[i].pos.x) << ','
+			<< std::to_string(Path[i].pos.y) << ','
+			<< std::to_string(Path[i].direct.x) << ','
+			<< std::to_string(Path[i].direct.y) << ','
+			<< std::to_string(Path[i].tag) << std::endl;
 	}
 	outFile.close();
 }
-int main()
-{
-	vector<posDirect> leftPath, rightPath;
-	string fname1 = "leftPath.csv";
-	string fname2 = "rightPath.csv";
+
+int run(){
+	std::vector<posDirect> leftPath, rightPath;
+	std::string fname1 = "leftPath.csv";
+	std::string fname2 = "rightPath.csv";
 	fileToData(leftPath, fname1);
 	fileToData(rightPath, fname2);
 	double lenLeft, lenLline, lenLcurve;
@@ -457,8 +463,8 @@ int main()
 	int stateChange, lt, rt;
 	posDirect leftcur = leftPath[0];
 	posDirect rightcur = rightPath[0];
-	vector<posDirect>recordcalL, recordcalR;
-	vector<posDirect>recordrealL, recordrealR;
+	std::vector<posDirect>recordcalL, recordcalR;
+	std::vector<posDirect>recordrealL, recordrealR;
 	//真实值和模拟值起点都一样
 	recordcalL.push_back(leftcur);
 	recordcalR.push_back(rightcur);
@@ -501,26 +507,38 @@ int main()
 		int flag;
 		xyz lvx, lvy, lvz,rvx,rvy,rvz;
 		xyz n = { 0,0,1 };
-		vector<vector<double>>lR,rR;
-		vector<double>lQ,rQ;
+		std::vector<std::vector<double>>lR,rR;
+		std::vector<double>lQ,rQ;
 		std::tie(flag, lvx, lvy, lvz) = get_R_Q2(nextLeftF, 0, n, lR, lQ);
 		if (flag != 1)
 		{
-			cout << "出错啦" << endl;
+			std::cout << "出错啦" << std::endl;
 		}
 		std::tie(flag, rvx, rvy, rvz) = get_R_Q2(nextRightF, 0, n, rR, rQ);
 		if (flag != 1)
 		{
-			cout << "出错啦" << endl;
+			std::cout << "出错啦" << std::endl;
 		}
 	}
-	string fileLsim = "file_sim_left.csv";
-	string fileRsim = "file_sim_right.csv";
-	string fileLreal = "file_real_left.csv";
-	string fileRreal = "file_real_right.csv";
+	std::string fileLsim = "file/file_sim_left.csv";
+	std::string fileRsim = "file/file_sim_right.csv";
+	std::string fileLreal = "file/file_real_left.csv";
+	std::string fileRreal = "file/file_real_right.csv";
 	dataToFile(recordcalL, fileLsim);
 	dataToFile(recordcalR, fileRsim);
 	dataToFile(recordrealL, fileLreal);
 	dataToFile(recordrealR, fileRreal);
+	return 0;
+}
+
+void ethercat_callback(const head_system::Ethercat::ConstPtr& msg){
+    ethercatMsg = *msg;
+}
+
+int main(int argc, char **argv){
+    ros::init(argc, argv, "headsystem");
+    ros::NodeHandle n("~");
+    ros::Subscriber sub_ethercat = n.subscribe("/ethercat", 1000, &ethercat_callback);
+	run()
 	return 0;
 }
