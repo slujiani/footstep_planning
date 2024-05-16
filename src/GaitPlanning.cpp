@@ -7,9 +7,9 @@
 #include<random>
 #include<tuple>
 
-#define vs 0.4	// Ö±ÏßĞĞ×ßËÙ¶È£¬Ã¿²½Ã×/Ãë
-#define vc 0.1	// ÇúÏßĞĞ×ßËÙ¶È£¬Ã¿²½Ã×/Ãë
-#define lcTh 1* M_PI / 180;	// Ö±ÏßÂ·¾¶ºÍÇúÏßÂ·¾¶×ª½ÇÇø·ÖãĞÖµ£¬µ¥Î»£º¶È
+#define vs 0.4	// ç›´çº¿è¡Œèµ°é€Ÿåº¦ï¼Œæ¯æ­¥ç±³/ç§’
+#define vc 0.1	// æ›²çº¿è¡Œèµ°é€Ÿåº¦ï¼Œæ¯æ­¥ç±³/ç§’
+#define lcTh 1* M_PI / 180;	// ç›´çº¿è·¯å¾„å’Œæ›²çº¿è·¯å¾„è½¬è§’åŒºåˆ†é˜ˆå€¼ï¼Œå•ä½ï¼šåº¦
 using namespace std;
 struct xy
 {
@@ -20,7 +20,7 @@ struct posDirect
 {
 	xy pos;
 	xy direct;
-	int tag;	// 1 Ö±Ïß¶Î£¬-1 ÇúÏß¶Î£¬0 ÖÕµã
+	int tag;	// 1 ç›´çº¿æ®µï¼Œ-1 æ›²çº¿æ®µï¼Œ0 ç»ˆç‚¹
 };
 
 xy vecMulC(xy a, double C)
@@ -38,7 +38,7 @@ xy vecAsubB(xy a, xy b)
 	xy res = { a.x - b.x,a.y - b.y };
 	return res;
 }
-// str ÎªÊäÈë×Ö·û´®£¬delÎª·Ö¸ô·û£¬·µ»Ø·Ö¸îÖ®ºóµÄ×Ö·û´®Êı×é
+// str ä¸ºè¾“å…¥å­—ç¬¦ä¸²ï¼Œdelä¸ºåˆ†éš”ç¬¦ï¼Œè¿”å›åˆ†å‰²ä¹‹åçš„å­—ç¬¦ä¸²æ•°ç»„
 vector<double> split(string str, char del) {
 	stringstream ss(str);
 	string tmp;
@@ -80,13 +80,13 @@ void fileToData(vector<posDirect>& data, string filename)
 		csvData.close();
 	}
 }
-//lcTh£ºÖ±ÏßÂ·¾¶ºÍÇúÏßÂ·¾¶×ª½ÇÇø·ÖãĞÖµ£¬µ¥Î»£º¶È
+//lcThï¼šç›´çº¿è·¯å¾„å’Œæ›²çº¿è·¯å¾„è½¬è§’åŒºåˆ†é˜ˆå€¼ï¼Œå•ä½ï¼šåº¦
 std::tuple<double, double, double> getRoadLen(vector<posDirect>path)
 {
 	int pathSize = path.size();
-	double L = 0;	// Â·¾¶³¤¶È
-	double Ll = 0;	// Ö±Ïß³¤¶È
-	double Lc = 0;	// ÇúÏß³¤¶È
+	double L = 0;	// è·¯å¾„é•¿åº¦
+	double Ll = 0;	// ç›´çº¿é•¿åº¦
+	double Lc = 0;	// æ›²çº¿é•¿åº¦
 	for (int i = 0; i < pathSize-1; i++)
 	{
 		xy diff = vecAsubB(path[i + 1].pos, path[i].pos);
@@ -103,7 +103,7 @@ std::tuple<double, double, double> getRoadLen(vector<posDirect>path)
 	}
 	return std::make_tuple(L, Ll, Lc);
 }
-//ËÑË÷Â·¾¶ÖĞÀëµ±Ç°µã×î½üµÄµã£¬½«µ±Ç°µã¹éµ½ÄÇÒ»×éÈ¥
+//æœç´¢è·¯å¾„ä¸­ç¦»å½“å‰ç‚¹æœ€è¿‘çš„ç‚¹ï¼Œå°†å½“å‰ç‚¹å½’åˆ°é‚£ä¸€ç»„å»
 int searchNearestPos(int low, int high, xy cur, vector<posDirect>path)
 {
 	double minp = DBL_MAX;
@@ -137,7 +137,7 @@ std::tuple<posDirect, int> getOneFoot(vector<posDirect>path, int ind, posDirect 
 			break;
 		}
 	}
-	//ÅĞ¶ÏÔÚÕâ¸ö¹ı³ÌÖĞÊÇ·ñ·¢Éú×´Ì¬±ä»¯£¬Èç¹û±ä»¯£¬state_change== 1
+	//åˆ¤æ–­åœ¨è¿™ä¸ªè¿‡ç¨‹ä¸­æ˜¯å¦å‘ç”ŸçŠ¶æ€å˜åŒ–ï¼Œå¦‚æœå˜åŒ–ï¼Œstate_change== 1
 	for (i = ind; i < e; i++)
 	{
 		if (path[i].tag != path[i + 1].tag)
@@ -146,18 +146,18 @@ std::tuple<posDirect, int> getOneFoot(vector<posDirect>path, int ind, posDirect 
 			break;
 		}
 	}
-	//Èç¹ûÂäºó×ã´ïµ½ÖÕµã£¬ÔòÏÂÒ»²½¹æ»®»¹ÊÇÖÕµãÎ»ÖÃ
+	//å¦‚æœè½åè¶³è¾¾åˆ°ç»ˆç‚¹ï¼Œåˆ™ä¸‹ä¸€æ­¥è§„åˆ’è¿˜æ˜¯ç»ˆç‚¹ä½ç½®
 	if (i == pathSize-1)
 	{
 		ret = path[i];
 	}
 	return make_tuple(ret, state_change);
 }
-//pathÊÇÂäºó×ãµÄÂ·¾¶£¬·µ»ØÂäºó×ã¼°Ç°×ãµÄµãÎ»,state_change·µ»ØÖµµÃÓëÖ®Ç°µÄ»òÒ»ÏÂ
+//pathæ˜¯è½åè¶³çš„è·¯å¾„ï¼Œè¿”å›è½åè¶³åŠå‰è¶³çš„ç‚¹ä½,state_changeè¿”å›å€¼å¾—ä¸ä¹‹å‰çš„æˆ–ä¸€ä¸‹
 std::tuple<posDirect, posDirect, int> getPosFit(vector<posDirect>path_behind, vector<posDirect>path_forward, posDirect cur_b, posDirect cur_f, int ind_b, int ind_f, double v_b, double v_f)
 {
 	posDirect pD_b, pD_f;
-	//Âäºó×ã´Óµ±Ç°Î»ÖÃ¿ªÊ¼ÏòÇ°ËÑË÷£¬Ö±µ½ÔË¶¯³¤¶È´ïµ½Ö¸¶¨²½³¤
+	//è½åè¶³ä»å½“å‰ä½ç½®å¼€å§‹å‘å‰æœç´¢ï¼Œç›´åˆ°è¿åŠ¨é•¿åº¦è¾¾åˆ°æŒ‡å®šæ­¥é•¿
 	int pathSize = path_behind.size();
 	//int lowInd = min(ind_b + 1, pathSize - 1);
 	//int i, e;
@@ -166,50 +166,50 @@ std::tuple<posDirect, posDirect, int> getPosFit(vector<posDirect>path_behind, ve
 	std::tie(pD_f, state_change) = getOneFoot(path_forward, ind_f, cur_f, v_f, state_change);
 	return make_tuple(pD_b, pD_f, state_change);
 }
-//vk=LR/LL LR\LL×óÓÒ×ãÍêÕû¹ì¼£ÖĞÇúÏß¶ÎµÄ³¤¶È
+//vk=LR/LL LR\LLå·¦å³è¶³å®Œæ•´è½¨è¿¹ä¸­æ›²çº¿æ®µçš„é•¿åº¦
 std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDirect>left, vector<posDirect>right, posDirect Lcur, posDirect Rcur, double vk, int pll, int SC)
 {
-	int FR = 0;	//ÏÈ×ßÄÄÒ»×ã£¬1 ×ó×ã£¬-1 ÓÒ×ã£¬0 ²»¶¯
+	int FR = 0;	//å…ˆèµ°å“ªä¸€è¶³ï¼Œ1 å·¦è¶³ï¼Œ-1 å³è¶³ï¼Œ0 ä¸åŠ¨
 	posDirect nextLeftF = Lcur, nextRightF = Rcur;
-	double lt = 0;	//×ó×ãÔË¶¯Ê±¼ä
+	double lt = 0;	//å·¦è¶³è¿åŠ¨æ—¶é—´
 	double rt = 0;
-	int stateChange=0;	// state_change==1 ÔÚ»úÆ÷ÈË°´¹æ»®Â·¾¶ĞĞ×ß»á·¢Éú×´Ì¬±ä»¯£¬state_change==0£¬ÎŞ×´Ì¬
-	int vw = 1;	//ÓÒ×ã¸ù¾İvk¸Ã±ÈÀıµ÷½Ú²½³¤£¨ËÙ¶È£©
-	//ÕÒµ½×ó×ãµ±Ç°Î»ÖÃÀë¹æ»®µÄÎ»ÖÃĞòÁĞÖĞÄÄ¸öÎ»ÖÃ×î½ü
+	int stateChange=0;	// state_change==1 åœ¨æœºå™¨äººæŒ‰è§„åˆ’è·¯å¾„è¡Œèµ°ä¼šå‘ç”ŸçŠ¶æ€å˜åŒ–ï¼Œstate_change==0ï¼Œæ— çŠ¶æ€
+	int vw = 1;	//å³è¶³æ ¹æ®vkè¯¥æ¯”ä¾‹è°ƒèŠ‚æ­¥é•¿ï¼ˆé€Ÿåº¦ï¼‰
+	//æ‰¾åˆ°å·¦è¶³å½“å‰ä½ç½®ç¦»è§„åˆ’çš„ä½ç½®åºåˆ—ä¸­å“ªä¸ªä½ç½®æœ€è¿‘
 	int pathSize = left.size();
 
 	int lind = searchNearestPos(0, pathSize, Lcur.pos, left);
-	//ÔÚ×ó×ã×î½üÎ»ÖÃ¸½½ü£¬ÔÚÓÒ×ãĞòÁĞÖĞÕÒµ½ÓëÓÒ×ãÎ»ÖÃ×î½üµÄµã
+	//åœ¨å·¦è¶³æœ€è¿‘ä½ç½®é™„è¿‘ï¼Œåœ¨å³è¶³åºåˆ—ä¸­æ‰¾åˆ°ä¸å³è¶³ä½ç½®æœ€è¿‘çš„ç‚¹
 	int lowInd = max((int)(lind - 0.1 * pathSize), 0);
 	int highInd = min((int)(lind + 0.1 * pathSize), pathSize);
 	int rind = searchNearestPos(lowInd, highInd, Rcur.pos, right);
 
-	double lv, rv;//×óÓÒ½ÅËÙ¶È
+	double lv, rv;//å·¦å³è„šé€Ÿåº¦
 	int i;
 	int e=-1;
-	//Á½×ã²¢ÁĞ
+	//ä¸¤è¶³å¹¶åˆ—
 	if (abs(lind - rind) <= 3 || pll == 1)
 	{
-		if (lind == pathSize - 1)//ÒÑµ½´ïÖÕµã£¬½áÊø
+		if (lind == pathSize - 1)//å·²åˆ°è¾¾ç»ˆç‚¹ï¼Œç»“æŸ
 		{
 			FR = 0;
 			lt = 0;
 			return std::make_tuple(FR, nextLeftF, lt, nextRightF, rt, stateChange);
 		}
-		//¸ù¾İ¹æ»®ÖĞÏÂÒ»µãµÄ×´Ì¬£¬Ö±Ïß»¹ÊÇÇúÏß£¬¾ö¶¨Ë«×ãËÙ¶È
+		//æ ¹æ®è§„åˆ’ä¸­ä¸‹ä¸€ç‚¹çš„çŠ¶æ€ï¼Œç›´çº¿è¿˜æ˜¯æ›²çº¿ï¼Œå†³å®šåŒè¶³é€Ÿåº¦
 		if (left[min(lind + 1, pathSize - 1)].tag == -1 || right[min(rind + 1, pathSize - 1)].tag == -1)
 		{
-			// ÇúÏßÔË¶¯
-			lv = 0.5 * vc;// ×ó×ãÈ¨ÏŞÔË¶¯£¬Ë«×ã²¢ÁĞºó£¬×ó×ãÏÈ¶¯£¬ÔË¶¯°ë²½
-			rv = vk * vc;// ËæºóÓÒ×ãÔË¶¯£¬ÓÒ×ãËÙ¶È£¨²½³¤£©¸ù¾İÇúÏß¶Î³¤¶ÈµÄ±ÈÀıµ÷Õû
+			// æ›²çº¿è¿åŠ¨
+			lv = 0.5 * vc;// å·¦è¶³æƒé™è¿åŠ¨ï¼ŒåŒè¶³å¹¶åˆ—åï¼Œå·¦è¶³å…ˆåŠ¨ï¼Œè¿åŠ¨åŠæ­¥
+			rv = vk * vc;// éšåå³è¶³è¿åŠ¨ï¼Œå³è¶³é€Ÿåº¦ï¼ˆæ­¥é•¿ï¼‰æ ¹æ®æ›²çº¿æ®µé•¿åº¦çš„æ¯”ä¾‹è°ƒæ•´
 		}
 		else
 		{
-			// Ö±ÏßÔË¶¯
-			lv = 0.5 * vs; // ×ó×ã°ë²½
-			rv = vw * vs; // ÓÒ×ãÕı³£
+			// ç›´çº¿è¿åŠ¨
+			lv = 0.5 * vs; // å·¦è¶³åŠæ­¥
+			rv = vw * vs; // å³è¶³æ­£å¸¸
 		}
-		//×ó×ã´Óµ±Ç°Î»ÖÃ¿ªÊ¼£¬ÏòÇ°ËÑË÷£¬Ö±µ½ÔË¶¯³¤¶È´ïµ½Ö¸¶¨²½³¤
+		//å·¦è¶³ä»å½“å‰ä½ç½®å¼€å§‹ï¼Œå‘å‰æœç´¢ï¼Œç›´åˆ°è¿åŠ¨é•¿åº¦è¾¾åˆ°æŒ‡å®šæ­¥é•¿
 		lowInd = min(lind + 1, pathSize - 1);
 
 		for (i = lowInd; i < pathSize; i++)
@@ -219,13 +219,13 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 			if (D >= lv * lv)
 			{
 				nextLeftF = left[i];
-				lt = 0; //ÏÈÔË¶¯£¬Îª0
+				lt = 0; //å…ˆè¿åŠ¨ï¼Œä¸º0
 				FR = 1;
 				e = i;
 				break;
 			}
 		}
-		//ÅĞ¶ÏÔÚÕâ¸ö¹ı³ÌÖĞÊÇ·ñ·¢Éú×´Ì¬±ä»¯£¬Èç¹û±ä»¯£¬state_change== 1
+		//åˆ¤æ–­åœ¨è¿™ä¸ªè¿‡ç¨‹ä¸­æ˜¯å¦å‘ç”ŸçŠ¶æ€å˜åŒ–ï¼Œå¦‚æœå˜åŒ–ï¼Œstate_change== 1
 
 		for (i = lind; i < e; i++)
 		{
@@ -235,14 +235,14 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 				break;
 			}
 		}
-		//Èç¹û×ó×ã´ïµ½ÖÕµã£¬ÔòÏÂÒ»²½¹æ»®»¹ÊÇÖÕµãÎ»ÖÃ
+		//å¦‚æœå·¦è¶³è¾¾åˆ°ç»ˆç‚¹ï¼Œåˆ™ä¸‹ä¸€æ­¥è§„åˆ’è¿˜æ˜¯ç»ˆç‚¹ä½ç½®
 		if (i == pathSize - 1)
 		{
 			nextLeftF = left[i];
 			lt = 0;
 			FR = 1;
 		}
-		//ÓÒ×ã´Óµ±Ç°Î»ÖÃ¿ªÊ¼ÏòÇ°ËÑË÷£¬Ö±µ½ÔË¶¯³¤¶È´ïµ½Ö¸¶¨²½³¤
+		//å³è¶³ä»å½“å‰ä½ç½®å¼€å§‹å‘å‰æœç´¢ï¼Œç›´åˆ°è¿åŠ¨é•¿åº¦è¾¾åˆ°æŒ‡å®šæ­¥é•¿
 		lowInd = min(rind + 1, pathSize - 1);
 		for (i = lowInd; i < pathSize; i++)
 		{
@@ -251,17 +251,17 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 			if (D >= rv * rv)
 			{
 				nextRightF = right[i];
-				rt = 1; //ºóÔË¶¯£¬Îª1
+				rt = 1; //åè¿åŠ¨ï¼Œä¸º1
 				FR = 1;
 				e = i;
 				break;
 			}
 		}
 		if (e == -1)
-		{	//Ê£Óà³¤¶È±ÈÒ»²½Ğ¡£¬Ö±½ÓÂõµ½ÖÕµã
+		{	//å‰©ä½™é•¿åº¦æ¯”ä¸€æ­¥å°ï¼Œç›´æ¥è¿ˆåˆ°ç»ˆç‚¹
 			e = pathSize - 1;
 		}
-		//ÅĞ¶ÏÔÚÕâ¸ö¹ı³ÌÖĞÊÇ·ñ·¢Éú×´Ì¬±ä»¯£¬Èç¹û±ä»¯£¬state_change == 1
+		//åˆ¤æ–­åœ¨è¿™ä¸ªè¿‡ç¨‹ä¸­æ˜¯å¦å‘ç”ŸçŠ¶æ€å˜åŒ–ï¼Œå¦‚æœå˜åŒ–ï¼Œstate_change == 1
 		for (i = rind; i < e; i++)
 		{
 			if (right[i].tag != right[i + 1].tag)
@@ -270,7 +270,7 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 				break;
 			}
 		}
-		//Èç¹ûÓÒ×ã´ïµ½ÖÕµã£¬ÔòÏÂÒ»²½¹æ»®»¹ÊÇÖÕµãÎ»ÖÃ
+		//å¦‚æœå³è¶³è¾¾åˆ°ç»ˆç‚¹ï¼Œåˆ™ä¸‹ä¸€æ­¥è§„åˆ’è¿˜æ˜¯ç»ˆç‚¹ä½ç½®
 		if (i == pathSize - 1)
 		{
 			nextRightF = right[pathSize - 1];
@@ -279,19 +279,19 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 		}
 		return std::make_tuple(FR, nextLeftF, lt, nextRightF, rt, stateChange);
 	}
-	//Ò»×ã³¬Ç°£¬Ò»×ãÂäºó£¬ÏÈÔË¶¯Âäºó×ã
-	if (lind > rind)//×ó×ã³¬Ç°,ÓÒ×ãÂäºó
+	//ä¸€è¶³è¶…å‰ï¼Œä¸€è¶³è½åï¼Œå…ˆè¿åŠ¨è½åè¶³
+	if (lind > rind)//å·¦è¶³è¶…å‰,å³è¶³è½å
 	{
 		rt = 0;
 		FR = -1;
-		//Èç¹ûÔÚÉÏ´ÎÔË¶¯ÖĞ·¢ÉúµÄ×´Ì¬±ä»¯£¬ÔòÇ¿ÖÆÂäºó×ãÒ»²½²¢ÁĞ£¬ÁíÒ»×ã²»¶¯
+		//å¦‚æœåœ¨ä¸Šæ¬¡è¿åŠ¨ä¸­å‘ç”Ÿçš„çŠ¶æ€å˜åŒ–ï¼Œåˆ™å¼ºåˆ¶è½åè¶³ä¸€æ­¥å¹¶åˆ—ï¼Œå¦ä¸€è¶³ä¸åŠ¨
 		if (SC == 1 || left[lind].tag != left[min(lind + 1, pathSize - 1)].tag)
 		{
 			nextRightF = right[lind];
-			lt = 1;//×ó×ã²»¶¯
+			lt = 1;//å·¦è¶³ä¸åŠ¨
 			return std::make_tuple(FR, nextLeftF, lt, nextRightF, rt, stateChange);
 		}
-		//ÅĞ¶ÏÓÒ×ãÏµÒ»²½µÄ×´Ì¬ÊÇÖ±Ïß»¹ÊÇÇúÏß£¬¾ö¶¨×óÓÒ×ã²½³¤
+		//åˆ¤æ–­å³è¶³ç³»ä¸€æ­¥çš„çŠ¶æ€æ˜¯ç›´çº¿è¿˜æ˜¯æ›²çº¿ï¼Œå†³å®šå·¦å³è¶³æ­¥é•¿
 		if (right[rind + 1].tag == -1)
 		{
 			lv = vc;
@@ -303,21 +303,21 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(vector<posDire
 			rv = vw * vs;
 		}
 		std::tie(nextRightF, nextLeftF, stateChange) = getPosFit(right, left, Rcur, Lcur, rind, lind, rv, lv);
-		//ÅĞ¶ÏÔÚÕâ¸ö¹ı³ÌÖĞÊÇ·ñ·¢Éú×´Ì¬±ä»¯£¬Èç¹û±ä»¯£¬state_change == 1
+		//åˆ¤æ–­åœ¨è¿™ä¸ªè¿‡ç¨‹ä¸­æ˜¯å¦å‘ç”ŸçŠ¶æ€å˜åŒ–ï¼Œå¦‚æœå˜åŒ–ï¼Œstate_change == 1
 
 	}
 	else
 	{
 		lt = 0;
 		FR = 1;
-		//Èç¹ûÔÚÉÏ´ÎÔË¶¯ÖĞ·¢ÉúµÄ×´Ì¬±ä»¯£¬ÔòÇ¿ÖÆÂäºó×ãÒ»²½²¢ÁĞ£¬ÁíÒ»×ã²»¶¯
+		//å¦‚æœåœ¨ä¸Šæ¬¡è¿åŠ¨ä¸­å‘ç”Ÿçš„çŠ¶æ€å˜åŒ–ï¼Œåˆ™å¼ºåˆ¶è½åè¶³ä¸€æ­¥å¹¶åˆ—ï¼Œå¦ä¸€è¶³ä¸åŠ¨
 		if (SC == 1 || right[lind].tag != right[min(lind + 1, pathSize - 1)].tag)
 		{
 			nextLeftF = left[rind];
-			rt = 1;//×ó×ã²»¶¯
+			rt = 1;//å·¦è¶³ä¸åŠ¨
 			return std::make_tuple(FR, nextLeftF, lt, nextRightF, rt, stateChange);
 		}
-		//ÅĞ¶ÏÓÒ×ãÏµÒ»²½µÄ×´Ì¬ÊÇÖ±Ïß»¹ÊÇÇúÏß£¬¾ö¶¨×óÓÒ×ã²½³¤
+		//åˆ¤æ–­å³è¶³ç³»ä¸€æ­¥çš„çŠ¶æ€æ˜¯ç›´çº¿è¿˜æ˜¯æ›²çº¿ï¼Œå†³å®šå·¦å³è¶³æ­¥é•¿
 		if (left[lind + 1].tag == -1)
 		{
 			lv = vc;
@@ -354,22 +354,22 @@ xyz normal_xyz(xyz a)
 	xyz res = xyzMulC(a, (1 / N));
 	return res;
 }
-//¼ÆËãÂä×ãµãÔÚµØÍ¼×ø±êÏµÖĞµÄÎ»ÖÃºÍ×ËÌ¬
-// ÊäÈë
-// cur µ±Ç°Âä×ãµãµÄ×ø±ê x y ;·½Ïò x y
-//z£ºDEMµØÍ¼ÉÏ¶ÔÓ¦(x,y)Î»ÖÃµÄ¸ß³Ì
-//n DEMµØÍ¼ÉÏ(x,y,z)µãµÄ±íÃæ·¨Ïß·½ÏòÊ¸Á¿£¬ĞĞÏòÁ¿,Ò²ÊÇÂä×ãµã·¨ÏòÁ¿
-//Êä³ö£º
-//flag£º±êÖ¾£¬1£¬Õı³££¬ÆäËû£¬Òì³£
-//vx£¬vy£¬vz£º·Ö±ğÊÇ×ã×ø±êÏµµÄx£¬y£¬zÖáÔÚDEM×ø±êÖĞµÄµ¥Î»ÏòÁ¿
-//R£º×ã×ø±êÏµ£¬x¡ªÇ°½ø·½Ïò£¬z¡ª×ãµØÃæ·¢ÏÖ·½Ïò£¬ÏòÉÏ£¬y¡ªÓëx£¬zĞÎ³ÉÓÒÊÖ×ø±êÏµ
+//è®¡ç®—è½è¶³ç‚¹åœ¨åœ°å›¾åæ ‡ç³»ä¸­çš„ä½ç½®å’Œå§¿æ€
+// è¾“å…¥
+// cur å½“å‰è½è¶³ç‚¹çš„åæ ‡ x y ;æ–¹å‘ x y
+//zï¼šDEMåœ°å›¾ä¸Šå¯¹åº”(x,y)ä½ç½®çš„é«˜ç¨‹
+//n DEMåœ°å›¾ä¸Š(x,y,z)ç‚¹çš„è¡¨é¢æ³•çº¿æ–¹å‘çŸ¢é‡ï¼Œè¡Œå‘é‡,ä¹Ÿæ˜¯è½è¶³ç‚¹æ³•å‘é‡
+//è¾“å‡ºï¼š
+//flagï¼šæ ‡å¿—ï¼Œ1ï¼Œæ­£å¸¸ï¼Œå…¶ä»–ï¼Œå¼‚å¸¸
+//vxï¼Œvyï¼Œvzï¼šåˆ†åˆ«æ˜¯è¶³åæ ‡ç³»çš„xï¼Œyï¼Œzè½´åœ¨DEMåæ ‡ä¸­çš„å•ä½å‘é‡
+//Rï¼šè¶³åæ ‡ç³»ï¼Œxâ€”å‰è¿›æ–¹å‘ï¼Œzâ€”è¶³åœ°é¢å‘ç°æ–¹å‘ï¼Œå‘ä¸Šï¼Œyâ€”ä¸xï¼Œzå½¢æˆå³æ‰‹åæ ‡ç³»
 std::tuple<int, xyz, xyz, xyz> get_R_Q2(posDirect cur, double z, xyz n, vector<vector<double>>& R, vector<double>& Q)
 {
 	int flag = 1;
 	double N = 1 / (sqrt(dotOfxyz(n, n)));
 	n = xyzMulC(n, N);
 
-	//¼ÆËãÂä×ãµã·¨ÏòÁ¿ÓëDEM×ø±êÏµZÖá¼Ğ½Ç£¬Èç¹û½Ç¶È´óÓÚ90¶È£¬·µ»ØÒì³££¬-1£»
+	//è®¡ç®—è½è¶³ç‚¹æ³•å‘é‡ä¸DEMåæ ‡ç³»Zè½´å¤¹è§’ï¼Œå¦‚æœè§’åº¦å¤§äº90åº¦ï¼Œè¿”å›å¼‚å¸¸ï¼Œ-1ï¼›
 	xyz v0 = { 0,0,1 };
 	xyz v1 = n;
 	xyz vx, vy, vz;
@@ -382,10 +382,10 @@ std::tuple<int, xyz, xyz, xyz> get_R_Q2(posDirect cur, double z, xyz n, vector<v
 
 	//
 	double v0_3 = -(1 / n.z) * (n.x * cur.direct.x + n.y * cur.direct.y);
-	//×ã×ø±êÏµxÖáÔÚDEM×ø±êÖĞµÄÊ¸Á¿v
+	//è¶³åæ ‡ç³»xè½´åœ¨DEMåæ ‡ä¸­çš„çŸ¢é‡v
 	xyz cur_dire_xyz = { cur.direct.x,cur.direct.y,v0_3 };
 	cur_dire_xyz = normal_xyz(cur_dire_xyz);
-	// ×ã×ø±êÏµµÄyÖáÓë×ã×ø±êÏµxÖá£¬zÖá¹¹³ÉÓÒÊÖÏµ
+	// è¶³åæ ‡ç³»çš„yè½´ä¸è¶³åæ ‡ç³»xè½´ï¼Œzè½´æ„æˆå³æ‰‹ç³»
 	vz = n;
 	vx = cur_dire_xyz;
 
@@ -393,10 +393,10 @@ std::tuple<int, xyz, xyz, xyz> get_R_Q2(posDirect cur, double z, xyz n, vector<v
 	vy.y = vz.z * vx.x - vz.x * vx.z;
 	vy.z = vz.x * vx.y - vz.y * vx.x;
 	vy = normal_xyz(vy);
-	//Âä×ãµã×ø±êÏµÔÚDEM×ø±êÏµÖĞµÄ·½Ïò£¨×ËÌ¬£©¾ØÕóR
+	//è½è¶³ç‚¹åæ ‡ç³»åœ¨DEMåæ ‡ç³»ä¸­çš„æ–¹å‘ï¼ˆå§¿æ€ï¼‰çŸ©é˜µR
 	R = { {vx.x,vy.x,vz.x},{vx.y,vy.y,vz.y},{vx.z,vy.z,vz.z} };
-	//½«·½Ïò¾ØÕó×ª»»³ÉËÄÔªÊı±íÊ¾
-	//q0ÎªËÄÔªÊı·ù¶È£¬±êÁ¿
+	//å°†æ–¹å‘çŸ©é˜µè½¬æ¢æˆå››å…ƒæ•°è¡¨ç¤º
+	//q0ä¸ºå››å…ƒæ•°å¹…åº¦ï¼Œæ ‡é‡
 	
 	Q.push_back(0.5 * sqrt(1 + vx.x + vy.y + vz.z));
 	Q.push_back( 0.25 * (vy.z - vz.y) / Q[0]);
@@ -404,15 +404,15 @@ std::tuple<int, xyz, xyz, xyz> get_R_Q2(posDirect cur, double z, xyz n, vector<v
 	Q.push_back( 0.25 * (vx.y - vy.x) / Q[0]);
 	return make_tuple(flag, vx, vy, vz);
 }
-// Éú³ÉÒ»¸ö·ûºÏ±ê×¼ÕıÌ¬·Ö²¼µÄËæ»úÊı
+// ç”Ÿæˆä¸€ä¸ªç¬¦åˆæ ‡å‡†æ­£æ€åˆ†å¸ƒçš„éšæœºæ•°
 double generateNormalRandom()
 {
-	// Ê¹ÓÃ±ê×¼ÕıÌ¬·Ö²¼£¬¾ùÖµÎª0£¬·½²îÎª1
+	// ä½¿ç”¨æ ‡å‡†æ­£æ€åˆ†å¸ƒï¼Œå‡å€¼ä¸º0ï¼Œæ–¹å·®ä¸º1
 	std::normal_distribution<double> distribution(0.0, 1);
-	// ´´½¨Ò»¸öËæ»úÊıÉú³ÉÆ÷
+	// åˆ›å»ºä¸€ä¸ªéšæœºæ•°ç”Ÿæˆå™¨
 	std::random_device randomDevice;
 	std::mt19937 generator(randomDevice());
-	// Éú³ÉËæ»úÊı
+	// ç”Ÿæˆéšæœºæ•°
 	return distribution(generator);
 }
 xy addGaussinToSim(xy goalPos)
@@ -448,10 +448,10 @@ int main()
 	double lenRight, lenRline, lenRcurve;
 	std::tie(lenLeft, lenLline, lenLcurve) = getRoadLen(leftPath);
 	std::tie(lenRight, lenRline, lenRcurve) = getRoadLen(rightPath);
-	int FR = -1;	//µ½´ïÖÕµãµÄ±êÖ¾
-	int SC = 0;	// ÔÚĞĞ×ßÖĞ¼ì²âµÄ×´Ì¬±ä»¯£¬´ÓÇúÏß¶Îµ½Ö±Ïß¶Î±ä»¯£¬»òÏà·´
+	int FR = -1;	//åˆ°è¾¾ç»ˆç‚¹çš„æ ‡å¿—
+	int SC = 0;	// åœ¨è¡Œèµ°ä¸­æ£€æµ‹çš„çŠ¶æ€å˜åŒ–ï¼Œä»æ›²çº¿æ®µåˆ°ç›´çº¿æ®µå˜åŒ–ï¼Œæˆ–ç›¸å
 	int last_SC = 0;
-	int pll = 1;	// ÔÚĞĞ×ß¹ı³ÌÖĞÊÇ·ñ³öÏÖË«×ã²¢ÁĞµÄÇé¿ö
+	int pll = 1;	// åœ¨è¡Œèµ°è¿‡ç¨‹ä¸­æ˜¯å¦å‡ºç°åŒè¶³å¹¶åˆ—çš„æƒ…å†µ
 	double vk = lenRcurve / lenLcurve;
 	posDirect nextLeftF, nextRightF;
 	int stateChange, lt, rt;
@@ -459,7 +459,7 @@ int main()
 	posDirect rightcur = rightPath[0];
 	vector<posDirect>recordcalL, recordcalR;
 	vector<posDirect>recordrealL, recordrealR;
-	//ÕæÊµÖµºÍÄ£ÄâÖµÆğµã¶¼Ò»Ñù
+	//çœŸå®å€¼å’Œæ¨¡æ‹Ÿå€¼èµ·ç‚¹éƒ½ä¸€æ ·
 	recordcalL.push_back(leftcur);
 	recordcalR.push_back(rightcur);
 	recordrealL.push_back(leftcur);
@@ -468,9 +468,9 @@ int main()
 	while (FR != 0)
 	{
 		step++;
-		//¸ù¾İµ±Ç°Âä×ãµãÎ»ÖÃºÍ¹æ»®µÄÈ«²¿Â·¾¶ºÍ³¯ÏòµÃµ½ÏÂÒ»²½Ë«×ãµÄÂä×ãµãÎ»ÖÃºÍ·½Ïò
+		//æ ¹æ®å½“å‰è½è¶³ç‚¹ä½ç½®å’Œè§„åˆ’çš„å…¨éƒ¨è·¯å¾„å’Œæœå‘å¾—åˆ°ä¸‹ä¸€æ­¥åŒè¶³çš„è½è¶³ç‚¹ä½ç½®å’Œæ–¹å‘
 		std::tie(FR, nextLeftF, lt, nextRightF, rt, stateChange) = getNextLocat(leftPath, rightPath, leftcur, rightcur, vk, pll, SC);
-		//¼ÆËãµÃµ½µÄÏÂÒ»¸öµã  ·¢ËÍ¸ø»úÆ÷ÈË
+		//è®¡ç®—å¾—åˆ°çš„ä¸‹ä¸€ä¸ªç‚¹  å‘é€ç»™æœºå™¨äºº
 		recordcalL.push_back(nextLeftF);
 		recordcalR.push_back(nextRightF);
 
@@ -483,7 +483,7 @@ int main()
 		//rightcur.pos = nextRightF.pos;
 		rightcur.direct = nextRightF.direct;
 		rightcur.tag = nextRightF.tag;
-		//¼Ó¸ßË¹Æ«ÖÃÄ£ÄâµÄÊµ¼ÊÖµ
+		//åŠ é«˜æ–¯åç½®æ¨¡æ‹Ÿçš„å®é™…å€¼
 		recordrealL.push_back(leftcur);
 		recordrealR.push_back(rightcur);
 
@@ -497,7 +497,7 @@ int main()
 			pll = 0;
 		}
 		last_SC = stateChange;
-		//°´ÕÕÒªÇóµÄ¸ñÊ½Êä³ö£¬Ë«×ãµÄÂä×ãµãÔÚDEMµØÍ¼×ø±êÏµÖĞµÄÎ»ÖÃºÍ×ã×ø±êÏµÔÚDEMµØÍ¼×ø±êÏµÖĞµÄ×ËÌ¬
+		//æŒ‰ç…§è¦æ±‚çš„æ ¼å¼è¾“å‡ºï¼ŒåŒè¶³çš„è½è¶³ç‚¹åœ¨DEMåœ°å›¾åæ ‡ç³»ä¸­çš„ä½ç½®å’Œè¶³åæ ‡ç³»åœ¨DEMåœ°å›¾åæ ‡ç³»ä¸­çš„å§¿æ€
 		int flag;
 		xyz lvx, lvy, lvz,rvx,rvy,rvz;
 		xyz n = { 0,0,1 };
@@ -506,12 +506,12 @@ int main()
 		std::tie(flag, lvx, lvy, lvz) = get_R_Q2(nextLeftF, 0, n, lR, lQ);
 		if (flag != 1)
 		{
-			cout << "³ö´íÀ²" << endl;
+			cout << "å‡ºé”™å•¦" << endl;
 		}
 		std::tie(flag, rvx, rvy, rvz) = get_R_Q2(nextRightF, 0, n, rR, rQ);
 		if (flag != 1)
 		{
-			cout << "³ö´íÀ²" << endl;
+			cout << "å‡ºé”™å•¦" << endl;
 		}
 	}
 	string fileLsim = "file_sim_left.csv";
