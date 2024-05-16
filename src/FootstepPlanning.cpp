@@ -539,6 +539,6 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "headsystem");
     ros::NodeHandle n("~");
     ros::Subscriber sub_ethercat = n.subscribe("/ethercat", 1000, &ethercat_callback);
-	run()
+	run();
 	return 0;
 }
