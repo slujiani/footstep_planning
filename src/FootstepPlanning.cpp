@@ -8,6 +8,7 @@
 #include<tuple>
 #include<float.h>
 #include "head_system/Ethercat.h"
+// #include <Ethercat.h>
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Bool.h>
@@ -173,7 +174,11 @@ std::tuple<posDirect, posDirect, int> getPosFit(std::vector<posDirect>path_behin
 	return std::make_tuple(pD_b, pD_f, state_change);
 }
 //vk=LR/LL LR\LL左右足完整轨迹中曲线段的长度
-std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, std::vector<posDirect>right, posDirect Lcur, posDirect Rcur, double vk, int pll, int SC)
+//返回值
+//FR 是否是终点
+//下一步的pos direct
+//state_change
+std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, std::vector<posDirect>right, posDirect Lcur, posDirect Rcur, double vk, int pll, int SC)
 {
 	int FR = 0;	//先走哪一足，1 左足，-1 右足，0 不动
 	posDirect nextLeftF = Lcur, nextRightF = Rcur;
@@ -186,8 +191,8 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(std::vector<po
 
 	int lind = searchNearestPos(0, pathSize, Lcur.pos, left);
 	//在左足最近位置附近，在右足序列中找到与右足位置最近的点
-	int lowInd = std::max((int)(lind - 0.1 * pathSize), 0);
-	int highInd = std::min((int)(lind + 0.1 * pathSize), pathSize);
+	int lowInd = max((int)(lind - 0.1 * pathSize), 0);
+	int highInd = min((int)(lind + 0.1 * pathSize), pathSize);
 	int rind = searchNearestPos(lowInd, highInd, Rcur.pos, right);
 
 	double lv, rv;//左右脚速度
@@ -200,23 +205,26 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(std::vector<po
 		{
 			FR = 0;
 			lt = 0;
-			return std::make_tuple(FR, nextLeftF, lt, nextRightF, rt, stateChange);
+			cout << "两足并列、而且已经到达终点，规划结束。" << endl;
+			return std::make_tuple(FR, nextLeftF, lt, stateChange);
 		}
 		//根据规划中下一点的状态，直线还是曲线，决定双足速度
-		if (left[std::min(lind + 1, pathSize - 1)].tag == -1 || right[std::min(rind + 1, pathSize - 1)].tag == -1)
+		if (left[min(lind + 1, pathSize - 1)].tag == -1 || right[min(rind + 1, pathSize - 1)].tag == -1)
 		{
 			// 曲线运动
 			lv = 0.5 * vc;// 左足权限运动，双足并列后，左足先动，运动半步
 			rv = vk * vc;// 随后右足运动，右足速度（步长）根据曲线段长度的比例调整
+			cout << "下一步是曲线运动" << endl;
 		}
 		else
 		{
 			// 直线运动
 			lv = 0.5 * vs; // 左足半步
 			rv = vw * vs; // 右足正常
+			cout << "下一步是直线运动" << endl;
 		}
 		//左足从当前位置开始，向前搜索，直到运动长度达到指定步长
-		lowInd = std::min(lind + 1, pathSize - 1);
+		lowInd = min(lind + 1, pathSize - 1);
 
 		for (i = lowInd; i < pathSize; i++)
 		{
@@ -248,95 +256,70 @@ std::tuple<int, posDirect, int, posDirect, int, int> getNextLocat(std::vector<po
 			lt = 0;
 			FR = 1;
 		}
-		//右足从当前位置开始向前搜索，直到运动长度达到指定步长
-		lowInd = std::min(rind + 1, pathSize - 1);
-		for (i = lowInd; i < pathSize; i++)
-		{
-			xy diff = vecAsubB(right[i].pos, Rcur.pos);
-			double D = dotOfVec(diff, diff);
-			if (D >= rv * rv)
-			{
-				nextRightF = right[i];
-				rt = 1; //后运动，为1
-				FR = 1;
-				e = i;
-				break;
-			}
-		}
-		if (e == -1)
-		{	//剩余长度比一步小，直接迈到终点
-			e = pathSize - 1;
-		}
-		//判断在这个过程中是否发生状态变化，如果变化，state_change == 1
-		for (i = rind; i < e; i++)
-		{
-			if (right[i].tag != right[i + 1].tag)
-			{
-				stateChange = 1;
-				break;
-			}
-		}
-		//如果右足达到终点，则下一步规划还是终点位置
-		if (i == pathSize - 1)
-		{
-			nextRightF = right[pathSize - 1];
-			rt = 1;
-			FR = 1;
-		}
-		return std::make_tuple(FR, nextLeftF, lt, nextRightF, rt, stateChange);
+		cout << "运动左脚,左脚坐标："<<nextLeftF.pos.x <<"," << nextRightF.pos.y << endl;
+		return std::make_tuple(FR, nextLeftF, lt,  stateChange);
 	}
 	//一足超前，一足落后，先运动落后足
 	if (lind > rind)//左足超前,右足落后
 	{
 		rt = 0;
 		FR = -1;
+		cout << "左脚在前，右脚在后" << endl;
 		//如果在上次运动中发生的状态变化，则强制落后足一步并列，另一足不动
-		if (SC == 1 || left[lind].tag != left[std::min(lind + 1, pathSize - 1)].tag)
+		if (SC == 1 || left[lind].tag != left[min(lind + 1, pathSize - 1)].tag)
 		{
 			nextRightF = right[lind];
 			lt = 1;//左足不动
-			return std::make_tuple(FR, nextLeftF, lt, nextRightF, rt, stateChange);
+			cout << "曲直变化，右脚上前和左脚齐平。" << endl;
+			return std::make_tuple(FR,  nextRightF, rt, stateChange);
 		}
 		//判断右足系一步的状态是直线还是曲线，决定左右足步长
 		if (right[rind + 1].tag == -1)
 		{
 			lv = vc;
 			rv = vk * vc;
+			cout << "下一步是曲线运动" << endl;
 		}
 		else
 		{
 			lv = vs;
 			rv = vw * vs;
+			cout << "下一步是直线运动" << endl;
 		}
-		std::tie(nextRightF, nextLeftF, stateChange) = getPosFit(right, left, Rcur, Lcur, rind, lind, rv, lv);
+		std::tie(nextRightF, stateChange) = getPosFit(right,  Rcur,  rind, rv);
 		//判断在这个过程中是否发生状态变化，如果变化，state_change == 1
-
+		return std::make_tuple(FR, nextRightF, rt, stateChange);
 	}
 	else
 	{
 		lt = 0;
 		FR = 1;
+		cout << "右脚在前，左脚在后" << endl;
 		//如果在上次运动中发生的状态变化，则强制落后足一步并列，另一足不动
-		if (SC == 1 || right[lind].tag != right[std::min(lind + 1, pathSize - 1)].tag)
+		if (SC == 1 || right[lind].tag != right[min(lind + 1, pathSize - 1)].tag)
 		{
 			nextLeftF = left[rind];
 			rt = 1;//左足不动
-			return std::make_tuple(FR, nextLeftF, lt, nextRightF, rt, stateChange);
+			cout << "曲直变化，左脚上前和右脚齐平。" << endl;
+			return std::make_tuple(FR, nextRightF, rt, stateChange);
 		}
 		//判断右足系一步的状态是直线还是曲线，决定左右足步长
 		if (left[lind + 1].tag == -1)
 		{
 			lv = vc;
 			rv = vk * vc;
+			cout << "下一步是曲线运动" << endl;
 		}
 		else
 		{
 			lv = vs;
 			rv = vw * vs;
+			cout << "下一步是直线运动" << endl;
 		}
-		std::tie(nextLeftF, nextRightF, stateChange) = getPosFit(left, right, Lcur, Rcur, lind, rind, lv, rv);
+		std::tie(nextLeftF, stateChange) = getPosFit(left,  Lcur,  lind,  lv);
+		return std::make_tuple(FR, nextLeftF, lt,  stateChange);
 	}
-	return std::make_tuple(FR, nextLeftF, lt, nextRightF, rt, stateChange);
+	
 }
 struct xyz
 {
@@ -369,7 +352,7 @@ xyz normal_xyz(xyz a)
 //flag：标志，1，正常，其他，异常
 //vx，vy，vz：分别是足坐标系的x，y，z轴在DEM坐标中的单位向量
 //R：足坐标系，x—前进方向，z—足地面发现方向，向上，y—与x，z形成右手坐标系
-std::tuple<int, xyz, xyz, xyz> get_R_Q2(posDirect cur, double z, xyz n, std::vector<std::vector<double>>& R, std::vector<double>& Q)
+void get_R_Q2(posDirect cur, double z, xyz n, std::vector<std::vector<double>>& R, std::vector<double>& Q)
 {
 	int flag = 1;
 	double N = 1 / (sqrt(dotOfxyz(n, n)));
@@ -443,11 +426,31 @@ void dataToFile(std::vector<posDirect>Path, std::string fname)
 	}
 	outFile.close();
 }
-
+std::tuple(posDirect,posDirect) getCurFeet()
+{
+	posDirect left,right;
+	left.pos.x=ethercatMsg.LeftFootPosX;
+	left.pos.y=ethercatMsg.LeftFootPosY;
+	left.pos.z=ethercatMsg.LeftFootPosZ;
+	right.pos.x=ethercatMsg.RightFootPosX;
+	right.pos.y=ethercatMsg.RightFootPosY;
+	right.pos.z=ethercatMsg.RightFootPosZ;
+	float q0=ethercatMsg.LeftFootOrientW;
+	float q1=ethercatMsg.LeftFootOrientX;
+	float q2=ethercatMsg.LeftFootOrienty;
+	float q3=ethercatMsg.LeftFootOrientZ;
+	left.direct={1-2*q2*q2-2*q3*q3,2*q1*q2+2*q0*q3};
+	q0=ethercatMsg.RightFootOrientW;
+	q1=ethercatMsg.RightFootOrientX;
+	q2=ethercatMsg.RightFootOrienty;
+	q3=ethercatMsg.RightFootOrientZ;
+	right.direct={1-2*q2*q2-2*q3*q3,2*q1*q2+2*q0*q3};
+	return left,right;
+}
 int run(){
 	std::vector<posDirect> leftPath, rightPath;
-	std::string fname1 = "leftPath.csv";
-	std::string fname2 = "rightPath.csv";
+	std::string fname1 = "file/leftPath.csv";
+	std::string fname2 = "file/rightPath.csv";
 	fileToData(leftPath, fname1);
 	fileToData(rightPath, fname2);
 	double lenLeft, lenLline, lenLcurve;
@@ -460,38 +463,53 @@ int run(){
 	int pll = 1;	// 在行走过程中是否出现双足并列的情况
 	double vk = lenRcurve / lenLcurve;
 	posDirect nextLeftF, nextRightF;
-	int stateChange, lt, rt;
-	posDirect leftcur = leftPath[0];
-	posDirect rightcur = rightPath[0];
-	std::vector<posDirect>recordcalL, recordcalR;
-	std::vector<posDirect>recordrealL, recordrealR;
+	int stateChange, nextStepTime;
+	posDirect leftcur;
+	posDirect rightcur;
+	std::tie(leftcur,rightcur)=getCurFeet();
+	std::vector<posDirect>recordcal;
+	std::vector<posDirect>recordreal;
 	//真实值和模拟值起点都一样
-	recordcalL.push_back(leftcur);
-	recordcalR.push_back(rightcur);
-	recordrealL.push_back(leftcur);
-	recordrealR.push_back(rightcur);
+	recordcal.push_back(leftcur);
+	recordcal.push_back(rightcur);
+	recordreal.push_back(leftcur);
+	recordreal.push_back(rightcur);
+	//输出列表
+	std::vector<xyz>lx, ly, lz;
+	std::vector<float>output;
 	int step = 0;
 	while (FR != 0)
 	{
-		step++;
 		//根据当前落足点位置和规划的全部路径和朝向得到下一步双足的落足点位置和方向
-		std::tie(FR, nextLeftF, lt, nextRightF, rt, stateChange) = getNextLocat(leftPath, rightPath, leftcur, rightcur, vk, pll, SC);
+		std::tie(FR, nextStep, nextStepTime,stateChange) = getNextLocat(leftPath, rightPath, leftcur, rightcur, vk, pll, SC);
 		//计算得到的下一个点  发送给机器人
-		recordcalL.push_back(nextLeftF);
-		recordcalR.push_back(nextRightF);
-
-		leftcur.pos = addGaussinToSim(nextLeftF.pos);
-		//leftcur.pos = nextLeftF.pos;
-		leftcur.direct = nextLeftF.direct;
-		leftcur.tag = nextLeftF.tag;
-
-		rightcur.pos = addGaussinToSim(nextRightF.pos);
-		//rightcur.pos = nextRightF.pos;
-		rightcur.direct = nextRightF.direct;
-		rightcur.tag = nextRightF.tag;
+		//左脚
+		nextStep.tag = FR; //1 左足， - 1 右足，0 不动
+		recordcal.push_back(nextStep);
+		step++;
+		
+		if (FR == 1)
+		{
+			//leftcur.pos = addGaussinToSim(nextStep.pos);
+			leftcur.pos = nextStep.pos;
+			leftcur.direct = nextStep.direct;
+			leftcur.tag = nextStep.tag;
+		}
+		else
+		{
+			//rightcur.pos = addGaussinToSim(nextStep.pos);
+			rightcur.pos = nextStep.pos;
+			rightcur.direct = nextStep.direct;
+			rightcur.tag = nextStep.tag;
+		}
+		
 		//加高斯偏置模拟的实际值
-		recordrealL.push_back(leftcur);
-		recordrealR.push_back(rightcur);
+		recordreal.push_back(nextStep);
+		if (step == 5)
+		{
+			break;
+		}
+		
 
 		SC = stateChange;
 		if (last_SC == 1 && stateChange == 0)
@@ -505,30 +523,27 @@ int run(){
 		last_SC = stateChange;
 		//按照要求的格式输出，双足的落足点在DEM地图坐标系中的位置和足坐标系在DEM地图坐标系中的姿态
 		int flag;
-		xyz lvx, lvy, lvz,rvx,rvy,rvz;
 		xyz n = { 0,0,1 };
-		std::vector<std::vector<double>>lR,rR;
-		std::vector<double>lQ,rQ;
-		std::tie(flag, lvx, lvy, lvz) = get_R_Q2(nextLeftF, 0, n, lR, lQ);
+		std::vector<vector<double>>R;
+		std::vector<double>Q;
+		get_R_Q2(nextStep, 0, n, R, Q);
 		if (flag != 1)
 		{
-			std::cout << "出错啦" << std::endl;
+			cout << "出错啦" << endl;
 		}
-		std::tie(flag, rvx, rvy, rvz) = get_R_Q2(nextRightF, 0, n, rR, rQ);
-		if (flag != 1)
-		{
-			std::cout << "出错啦" << std::endl;
-		}
+		#output
+		output.pushback(nextStep.pos.x);
+		output.pushback(nextStep.pos.y);
+		output.pushback(nextStep.pos.z);
+		output.pushback(Q[0]);
+		output.pushback(Q[1]);
+		output.pushback(Q[2]);
+		output.pushback(Q[3]);
 	}
-	std::string fileLsim = "file/file_sim_left.csv";
-	std::string fileRsim = "file/file_sim_right.csv";
-	std::string fileLreal = "file/file_real_left.csv";
-	std::string fileRreal = "file/file_real_right.csv";
-	dataToFile(recordcalL, fileLsim);
-	dataToFile(recordcalR, fileRsim);
-	dataToFile(recordrealL, fileLreal);
-	dataToFile(recordrealR, fileRreal);
-	return 0;
+	string filesim = "file_sim.csv";
+	string filereal = "file_real.csv";
+	dataToFile(recordcal, filesim);
+	dataToFile(recordreal, filereal);
 }
 
 void ethercat_callback(const head_system::Ethercat::ConstPtr& msg){
