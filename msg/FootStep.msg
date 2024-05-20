@@ -1,0 +1,44 @@
+float32 nextFirstStepX
+float32 nextFirstStepY
+float32 nextFirstStepZ
+float32 nextFirstStepOrientW
+float32 nextFirstStepOrientX
+float32 nextFirstStepOrientY
+float32 nextFirstStepOrientZ
+float32 nextFirstStepTime
+
+float32 nextSecondStepX
+float32 nextSecondStepY
+float32 nextSecondStepZ
+float32 nextSecondStepOrientW
+float32 nextSecondStepOrientX
+float32 nextSecondStepOrientY
+float32 nextSecondStepOrientZ
+float32 nextSecondStepTime
+
+float32 nextThirdStepX
+float32 nextThirdStepY
+float32 nextThirdStepZ
+float32 nextThirdStepOrientW
+float32 nextThirdStepOrientX
+float32 nextThirdStepOrientY
+float32 nextThirdStepOrientZ
+float32 nextThirdStepTime
+
+float32 nextFourthStepX
+float32 nextFourthStepY
+float32 nextFourthStepZ
+float32 nextFourthStepOrientW
+float32 nextFourthStepOrientX
+float32 nextFourthStepOrientY
+float32 nextFourthStepOrientZ
+float32 nextFourthStepTime
+
+float32 nextFifthStepX
+float32 nextFifthStepY
+float32 nextFifthStepZ
+float32 nextFifthStepOrientW
+float32 nextFifthStepOrientX
+float32 nextFifthStepOrientY
+float32 nextFifthStepOrientZ
+float32 nextFifthStepTime
