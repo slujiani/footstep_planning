@@ -7,7 +7,8 @@
 #include<random>
 #include<tuple>
 #include<float.h>
-#include "head_system/Ethercat.h"
+#include "footstep_planning/Ethercat.h"
+#include "footstep_planning/FootStep.h"
 // #include "Ethercat.h"
 #include <ros/ros.h>
 #include <std_msgs/String.h>
@@ -17,15 +18,22 @@
 #define vs 0.4	// 直线行走速度，每步米/秒
 #define vc 0.1	// 曲线行走速度，每步米/秒
 #define lcTh 1* M_PI / 180;	// 直线路径和曲线路径转角区分阈值，单位：度
-head_system::Ethercat ethercatMsg;
+footstep_planning::Ethercat ethercatMsg;
+footstep_planning::FootStep footStepMsg;
 struct xy
 {
 	double x;
 	double y;
 };
+struct xyz
+{
+	double x;
+	double y;
+	double z;
+};
 struct posDirect
 {
-	xy pos;
+	xyz pos;
 	xy direct;
 	int tag;	// 1 直线段，-1 曲线段，0 终点
 };
@@ -40,7 +48,7 @@ double dotOfVec(xy a, xy b)
 	double res = a.x * b.x + a.y * b.y;
 	return res;
 }
-xy vecAsubB(xy a, xy b)
+xy vecAsubB(xyz a, xyz b)
 {
 	xy res = { a.x - b.x,a.y - b.y };
 	return res;
@@ -111,7 +119,7 @@ std::tuple<double, double, double> getRoadLen(std::vector<posDirect>path)
 	return std::make_tuple(L, Ll, Lc);
 }
 //搜索路径中离当前点最近的点，将当前点归到那一组去
-int searchNearestPos(int low, int high, xy cur, std::vector<posDirect>path)
+int searchNearestPos(int low, int high, xyz cur, std::vector<posDirect>path)
 {
 	double minp = DBL_MAX;
 	int ret = -1;
@@ -208,7 +216,7 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 			return std::make_tuple(FR, nextLeftF, lt, stateChange);
 		}
 		//根据规划中下一点的状态，直线还是曲线，决定双足速度
-		if (left[min(lind + 1, pathSize - 1)].tag == -1 || right[min(rind + 1, pathSize - 1)].tag == -1)
+		if (left[std::min(lind + 1, pathSize - 1)].tag == -1 || right[std::min(rind + 1, pathSize - 1)].tag == -1)
 		{
 			// 曲线运动
 			lv = 0.5 * vc;// 左足权限运动，双足并列后，左足先动，运动半步
@@ -223,7 +231,7 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 			std::cout << "下一步是直线运动" << std::endl;
 		}
 		//左足从当前位置开始，向前搜索，直到运动长度达到指定步长
-		lowInd = min(lind + 1, pathSize - 1);
+		lowInd = std::min(lind + 1, pathSize - 1);
 
 		for (i = lowInd; i < pathSize; i++)
 		{
@@ -265,7 +273,7 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 		FR = -1;
 		std::cout << "左脚在前，右脚在后" << std::endl;
 		//如果在上次运动中发生的状态变化，则强制落后足一步并列，另一足不动
-		if (SC == 1 || left[lind].tag != left[min(lind + 1, pathSize - 1)].tag)
+		if (SC == 1 || left[lind].tag != left[std::min(lind + 1, pathSize - 1)].tag)
 		{
 			nextRightF = right[lind];
 			lt = 1;//左足不动
@@ -295,7 +303,7 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 		FR = 1;
 		std::cout << "右脚在前，左脚在后" << std::endl;
 		//如果在上次运动中发生的状态变化，则强制落后足一步并列，另一足不动
-		if (SC == 1 || right[lind].tag != right[min(lind + 1, pathSize - 1)].tag)
+		if (SC == 1 || right[lind].tag != right[std::min(lind + 1, pathSize - 1)].tag)
 		{
 			nextLeftF = left[rind];
 			rt = 1;//左足不动
@@ -320,12 +328,7 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 	}
 	
 }
-struct xyz
-{
-	double x;
-	double y;
-	double z;
-};
+
 double dotOfxyz(xyz a, xyz b)
 {
 	double res = a.x * b.x + a.y * b.y + a.z * b.z;
@@ -351,7 +354,7 @@ xyz normal_xyz(xyz a)
 //flag：标志，1，正常，其他，异常
 //vx，vy，vz：分别是足坐标系的x，y，z轴在DEM坐标中的单位向量
 //R：足坐标系，x—前进方向，z—足地面发现方向，向上，y—与x，z形成右手坐标系
-void get_R_Q2(posDirect cur, double z, xyz n, std::vector<std::vector<double>>& R, std::vector<double>& Q)
+int get_R_Q2(posDirect cur, double z, xyz n, std::vector<std::vector<double>>& R, std::vector<double>& Q)
 {
 	int flag = 1;
 	double N = 1 / (sqrt(dotOfxyz(n, n)));
@@ -365,7 +368,7 @@ void get_R_Q2(posDirect cur, double z, xyz n, std::vector<std::vector<double>>& 
 	if (abs(a0) >= M_PI / 2)
 	{
 		flag = -1;
-		return std::make_tuple(flag, vx, vy, vz);
+		return flag;
 	}
 
 	//
@@ -390,7 +393,7 @@ void get_R_Q2(posDirect cur, double z, xyz n, std::vector<std::vector<double>>& 
 	Q.push_back( 0.25 * (vy.z - vz.y) / Q[0]);
 	Q.push_back( 0.25 * (vz.x - vx.z) / Q[0]);
 	Q.push_back( 0.25 * (vx.y - vy.x) / Q[0]);
-	return std::make_tuple(flag, vx, vy, vz);
+	return flag;
 }
 // 生成一个符合标准正态分布的随机数
 double generateNormalRandom()
@@ -421,11 +424,59 @@ void dataToFile(std::vector<posDirect>Path, std::string fname)
 			<< std::to_string(Path[i].pos.y) << ','
 			<< std::to_string(Path[i].direct.x) << ','
 			<< std::to_string(Path[i].direct.y) << ','
-			<< std::to_string(Path[i].tag) << std::std::endl;
+			<< std::to_string(Path[i].tag) << std::endl;
 	}
 	outFile.close();
 }
-std::tuple(posDirect,posDirect) getCurFeet()
+void outToEthercat(std::vector<float> outp)
+{
+	footStepMsg.nextFirstStepX=outp[0];
+	footStepMsg.nextFirstStepY=outp[1];
+	footStepMsg.nextFirstStepZ=outp[2];
+	footStepMsg.nextFirstStepOrientW=outp[3];
+	footStepMsg.nextFirstStepOrientX=outp[4];
+	footStepMsg.nextFirstStepOrientY=outp[5];
+	footStepMsg.nextFirstStepOrientZ=outp[6];
+	footStepMsg.nextFirstStepTime=outp[7];
+
+	footStepMsg.nextSecondStepX      =outp[8];
+	footStepMsg.nextSecondStepY      =outp[9];
+	footStepMsg.nextSecondStepZ      =outp[10];
+	footStepMsg.nextSecondStepOrientW=outp[11];
+	footStepMsg.nextSecondStepOrientX=outp[12];
+	footStepMsg.nextSecondStepOrientY=outp[13];
+	footStepMsg.nextSecondStepOrientZ=outp[14];
+	footStepMsg.nextSecondStepTime   =outp[15];
+
+	footStepMsg.nextThirdStepX=outp[16];
+	footStepMsg.nextThirdStepY=outp[17];
+	footStepMsg.nextThirdStepZ=outp[18];
+	footStepMsg.nextThirdStepOrientW=outp[19];
+	footStepMsg.nextThirdStepOrientX=outp[20];
+	footStepMsg.nextThirdStepOrientY=outp[21];
+	footStepMsg.nextThirdStepOrientZ=outp[22];
+	footStepMsg.nextThirdStepTime=outp[23];
+
+	footStepMsg.nextFourthStepX=outp[24];
+	footStepMsg.nextFourthStepY=outp[25];
+	footStepMsg.nextFourthStepZ=outp[26];
+	footStepMsg.nextFourthStepOrientW=outp[27];
+	footStepMsg.nextFourthStepOrientX=outp[28];
+	footStepMsg.nextFourthStepOrientY=outp[29];
+	footStepMsg.nextFourthStepOrientZ=outp[30];
+	footStepMsg.nextFourthStepTime=outp[31];
+
+	footStepMsg.nextFifthStepX=outp[32];
+	footStepMsg.nextFifthStepY=outp[33];
+	footStepMsg.nextFifthStepZ=outp[34];
+	footStepMsg.nextFifthStepOrientW=outp[35];
+	footStepMsg.nextFifthStepOrientX=outp[36];
+	footStepMsg.nextFifthStepOrientY=outp[37];
+	footStepMsg.nextFifthStepOrientZ=outp[38];
+	footStepMsg.nextFifthStepTime=outp[39];
+
+}
+std::tuple<posDirect,posDirect> getCurFeet()
 {
 	posDirect left,right;
 	left.pos.x=ethercatMsg.LeftFootPosX;
@@ -444,9 +495,9 @@ std::tuple(posDirect,posDirect) getCurFeet()
 	q2=ethercatMsg.RightFootOrienty;
 	q3=ethercatMsg.RightFootOrientZ;
 	right.direct={1-2*q2*q2-2*q3*q3,2*q1*q2+2*q0*q3};
-	return left,right;
+	return std::make_tuple(left,right);
 }
-int run(){
+void run(){
 	std::vector<posDirect> leftPath, rightPath;
 	std::string fname1 = "file/leftPath.csv";
 	std::string fname2 = "file/rightPath.csv";
@@ -461,7 +512,8 @@ int run(){
 	int last_SC = 0;
 	int pll = 1;	// 在行走过程中是否出现双足并列的情况
 	double vk = lenRcurve / lenLcurve;
-	posDirect nextLeftF, nextRightF;
+	
+	posDirect nextStep;
 	int stateChange, nextStepTime;
 	posDirect leftcur;
 	posDirect rightcur;
@@ -523,14 +575,14 @@ int run(){
 		//按照要求的格式输出，双足的落足点在DEM地图坐标系中的位置和足坐标系在DEM地图坐标系中的姿态
 		int flag;
 		xyz n = { 0,0,1 };
-		std::vector<vector<double>>R;
+		std::vector<std::vector<double>> R;
 		std::vector<double>Q;
-		get_R_Q2(nextStep, 0, n, R, Q);
+		flag=get_R_Q2(nextStep, 0, n, R, Q);
 		if (flag != 1)
 		{
 			std::cout << "出错啦" << std::endl;
 		}
-		# output
+		// output
 		output.push_back(nextStep.pos.x);
 		output.push_back(nextStep.pos.y);
 		output.push_back(nextStep.pos.z);
@@ -540,13 +592,14 @@ int run(){
 		output.push_back(Q[3]);
 		output.push_back(nextStepTime);
 	}
-	string filesim = "file_sim.csv";
-	string filereal = "file_real.csv";
+	std::string filesim = "file_sim.csv";
+	std::string filereal = "file_real.csv";
 	dataToFile(recordcal, filesim);
 	dataToFile(recordreal, filereal);
+	outToEthercat(output);
 }
 
-void ethercat_callback(const head_system::Ethercat::ConstPtr& msg){
+void ethercat_callback(const footstep_planning::Ethercat::ConstPtr& msg){
     ethercatMsg = *msg;
 }
 
