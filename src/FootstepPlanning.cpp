@@ -8,7 +8,7 @@
 #include<tuple>
 #include<float.h>
 #include "head_system/Ethercat.h"
-// #include <Ethercat.h>
+// #include "Ethercat.h"
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Bool.h>
@@ -161,17 +161,16 @@ std::tuple<posDirect, int> getOneFoot(std::vector<posDirect>path, int ind, posDi
 	return std::make_tuple(ret, state_change);
 }
 //path是落后足的路径，返回落后足及前足的点位,state_change返回值得与之前的或一下
-std::tuple<posDirect, posDirect, int> getPosFit(std::vector<posDirect>path_behind, std::vector<posDirect>path_forward, posDirect cur_b, posDirect cur_f, int ind_b, int ind_f, double v_b, double v_f)
+std::tuple<posDirect, int> getPosFit(std::vector<posDirect>path_behind, posDirect cur_b, int ind_b, double v_b)
 {
-	posDirect pD_b, pD_f;
+	posDirect pD_b;
+	int state_change = 0;
 	//落后足从当前位置开始向前搜索，直到运动长度达到指定步长
 	int pathSize = path_behind.size();
-	//int lowInd = std::min(ind_b + 1, pathSize - 1);
-	//int i, e;
-	int state_change = 0;
+	
 	std::tie(pD_b, state_change) = getOneFoot(path_behind, ind_b, cur_b, v_b, state_change);
-	std::tie(pD_f, state_change) = getOneFoot(path_forward, ind_f, cur_f, v_f, state_change);
-	return std::make_tuple(pD_b, pD_f, state_change);
+	//std::tie(pD_f, state_change) = getOneFoot(path_forward, ind_f, cur_f, v_f, state_change);只规划落后一步
+	return std::make_tuple(pD_b, state_change);
 }
 //vk=LR/LL LR\LL左右足完整轨迹中曲线段的长度
 //返回值
@@ -191,8 +190,8 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 
 	int lind = searchNearestPos(0, pathSize, Lcur.pos, left);
 	//在左足最近位置附近，在右足序列中找到与右足位置最近的点
-	int lowInd = max((int)(lind - 0.1 * pathSize), 0);
-	int highInd = min((int)(lind + 0.1 * pathSize), pathSize);
+	int lowInd = std::max((int)(lind - 0.1 * pathSize), 0);
+	int highInd = std::min((int)(lind + 0.1 * pathSize), pathSize);
 	int rind = searchNearestPos(lowInd, highInd, Rcur.pos, right);
 
 	double lv, rv;//左右脚速度
@@ -205,7 +204,7 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 		{
 			FR = 0;
 			lt = 0;
-			cout << "两足并列、而且已经到达终点，规划结束。" << endl;
+			std::cout << "两足并列、而且已经到达终点，规划结束。" << std::endl;
 			return std::make_tuple(FR, nextLeftF, lt, stateChange);
 		}
 		//根据规划中下一点的状态，直线还是曲线，决定双足速度
@@ -214,14 +213,14 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 			// 曲线运动
 			lv = 0.5 * vc;// 左足权限运动，双足并列后，左足先动，运动半步
 			rv = vk * vc;// 随后右足运动，右足速度（步长）根据曲线段长度的比例调整
-			cout << "下一步是曲线运动" << endl;
+			std::cout << "下一步是曲线运动" << std::endl;
 		}
 		else
 		{
 			// 直线运动
 			lv = 0.5 * vs; // 左足半步
 			rv = vw * vs; // 右足正常
-			cout << "下一步是直线运动" << endl;
+			std::cout << "下一步是直线运动" << std::endl;
 		}
 		//左足从当前位置开始，向前搜索，直到运动长度达到指定步长
 		lowInd = min(lind + 1, pathSize - 1);
@@ -256,7 +255,7 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 			lt = 0;
 			FR = 1;
 		}
-		cout << "运动左脚,左脚坐标："<<nextLeftF.pos.x <<"," << nextRightF.pos.y << endl;
+		std::cout << "运动左脚,左脚坐标："<<nextLeftF.pos.x <<"," << nextRightF.pos.y << std::endl;
 		return std::make_tuple(FR, nextLeftF, lt,  stateChange);
 	}
 	//一足超前，一足落后，先运动落后足
@@ -264,13 +263,13 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 	{
 		rt = 0;
 		FR = -1;
-		cout << "左脚在前，右脚在后" << endl;
+		std::cout << "左脚在前，右脚在后" << std::endl;
 		//如果在上次运动中发生的状态变化，则强制落后足一步并列，另一足不动
 		if (SC == 1 || left[lind].tag != left[min(lind + 1, pathSize - 1)].tag)
 		{
 			nextRightF = right[lind];
 			lt = 1;//左足不动
-			cout << "曲直变化，右脚上前和左脚齐平。" << endl;
+			std::cout << "曲直变化，右脚上前和左脚齐平。" << std::endl;
 			return std::make_tuple(FR,  nextRightF, rt, stateChange);
 		}
 		//判断右足系一步的状态是直线还是曲线，决定左右足步长
@@ -278,13 +277,13 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 		{
 			lv = vc;
 			rv = vk * vc;
-			cout << "下一步是曲线运动" << endl;
+			std::cout << "下一步是曲线运动" << std::endl;
 		}
 		else
 		{
 			lv = vs;
 			rv = vw * vs;
-			cout << "下一步是直线运动" << endl;
+			std::cout << "下一步是直线运动" << std::endl;
 		}
 		std::tie(nextRightF, stateChange) = getPosFit(right,  Rcur,  rind, rv);
 		//判断在这个过程中是否发生状态变化，如果变化，state_change == 1
@@ -294,13 +293,13 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 	{
 		lt = 0;
 		FR = 1;
-		cout << "右脚在前，左脚在后" << endl;
+		std::cout << "右脚在前，左脚在后" << std::endl;
 		//如果在上次运动中发生的状态变化，则强制落后足一步并列，另一足不动
 		if (SC == 1 || right[lind].tag != right[min(lind + 1, pathSize - 1)].tag)
 		{
 			nextLeftF = left[rind];
 			rt = 1;//左足不动
-			cout << "曲直变化，左脚上前和右脚齐平。" << endl;
+			std::cout << "曲直变化，左脚上前和右脚齐平。" << std::endl;
 			return std::make_tuple(FR, nextRightF, rt, stateChange);
 		}
 		//判断右足系一步的状态是直线还是曲线，决定左右足步长
@@ -308,13 +307,13 @@ std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, st
 		{
 			lv = vc;
 			rv = vk * vc;
-			cout << "下一步是曲线运动" << endl;
+			std::cout << "下一步是曲线运动" << std::endl;
 		}
 		else
 		{
 			lv = vs;
 			rv = vw * vs;
-			cout << "下一步是直线运动" << endl;
+			std::cout << "下一步是直线运动" << std::endl;
 		}
 		std::tie(nextLeftF, stateChange) = getPosFit(left,  Lcur,  lind,  lv);
 		return std::make_tuple(FR, nextLeftF, lt,  stateChange);
@@ -422,7 +421,7 @@ void dataToFile(std::vector<posDirect>Path, std::string fname)
 			<< std::to_string(Path[i].pos.y) << ','
 			<< std::to_string(Path[i].direct.x) << ','
 			<< std::to_string(Path[i].direct.y) << ','
-			<< std::to_string(Path[i].tag) << std::endl;
+			<< std::to_string(Path[i].tag) << std::std::endl;
 	}
 	outFile.close();
 }
@@ -529,16 +528,17 @@ int run(){
 		get_R_Q2(nextStep, 0, n, R, Q);
 		if (flag != 1)
 		{
-			cout << "出错啦" << endl;
+			std::cout << "出错啦" << std::endl;
 		}
-		#output
-		output.pushback(nextStep.pos.x);
-		output.pushback(nextStep.pos.y);
-		output.pushback(nextStep.pos.z);
-		output.pushback(Q[0]);
-		output.pushback(Q[1]);
-		output.pushback(Q[2]);
-		output.pushback(Q[3]);
+		# output
+		output.push_back(nextStep.pos.x);
+		output.push_back(nextStep.pos.y);
+		output.push_back(nextStep.pos.z);
+		output.push_back(Q[0]);
+		output.push_back(Q[1]);
+		output.push_back(Q[2]);
+		output.push_back(Q[3]);
+		output.push_back(nextStepTime);
 	}
 	string filesim = "file_sim.csv";
 	string filereal = "file_real.csv";
