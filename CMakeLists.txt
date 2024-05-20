@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 add_message_files(FILES Ethercat.msg)
+add_message_files(FILES FootStep.msg)
 generate_messages(DEPENDENCIES std_msgs)
 
 ## System dependencies are found with CMake's conventions

@@ -9,7 +9,6 @@
 #include<float.h>
 #include "footstep_planning/Ethercat.h"
 #include "footstep_planning/FootStep.h"
-// #include "Ethercat.h"
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Bool.h>
@@ -18,8 +17,6 @@
 #define vs 0.4	// 直线行走速度，每步米/秒
 #define vc 0.1	// 曲线行走速度，每步米/秒
 #define lcTh 1* M_PI / 180;	// 直线路径和曲线路径转角区分阈值，单位：度
-footstep_planning::Ethercat ethercatMsg;
-footstep_planning::FootStep footStepMsg;
 struct xy
 {
 	double x;
@@ -37,6 +34,40 @@ struct posDirect
 	xy direct;
 	int tag;	// 1 直线段，-1 曲线段，0 终点
 };
+xy vecMulC(xy a, double C);
+double dotOfVec(xy a, xy b);
+xy vecAsubB(xyz a, xyz b);
+std::vector<double> split(std::string str, char del);
+void fileToData(std::vector<posDirect>& data, std::string filename);
+std::tuple<double, double, double> getRoadLen(std::vector<posDirect>path);
+int searchNearestPos(int low, int high, xyz cur, std::vector<posDirect>path);
+std::tuple<posDirect, int> getOneFoot(std::vector<posDirect>path, int ind, posDirect cur, double v, int state_change);
+std::tuple<posDirect, int> getPosFit(std::vector<posDirect>path_behind, posDirect cur_b, int ind_b, double v_b);
+std::tuple<int, posDirect, int, int> getNextLocat(std::vector<posDirect>left, std::vector<posDirect>right, posDirect Lcur, posDirect Rcur, double vk, int pll, int SC);
+double dotOfxyz(xyz a, xyz b);
+xyz xyzMulC(xyz a, double C);
+xyz normal_xyz(xyz a);
+int get_R_Q2(posDirect cur, double z, xyz n, std::vector<std::vector<double>>& R, std::vector<double>& Q);
+double generateNormalRandom();
+xy addGaussinToSim(xy goalPos);
+void dataToFile(std::vector<posDirect>Path, std::string fname);
+void outToEthercat(std::vector<float> outp);
+std::tuple<posDirect,posDirect> getCurFeet();
+void run();
+void ethercat_callback(const footstep_planning::Ethercat::ConstPtr& msg);
+footstep_planning::Ethercat ethercatMsg;
+footstep_planning::FootStep footStepMsg;
+ros::Subscriber sub_ethercat;
+ros::Publisher pub_footstep;
+
+int main(int argc, char **argv){
+	ros::init(argc, argv, "footstepplanning");
+	ros::NodeHandle n("~");
+	sub_ethercat = n.subscribe("/ethercat", 1000, &ethercat_callback);
+	pub_footstep = n.advertise<footstep_planning::FootStep>("/footstep", 1000);
+	run();
+	return 0;
+}
 
 xy vecMulC(xy a, double C)
 {
@@ -475,6 +506,7 @@ void outToEthercat(std::vector<float> outp)
 	footStepMsg.nextFifthStepOrientZ=outp[38];
 	footStepMsg.nextFifthStepTime=outp[39];
 
+	pub_footstep.publish(footStepMsg);
 }
 std::tuple<posDirect,posDirect> getCurFeet()
 {
@@ -601,12 +633,4 @@ void run(){
 
 void ethercat_callback(const footstep_planning::Ethercat::ConstPtr& msg){
     ethercatMsg = *msg;
-}
-
-int main(int argc, char **argv){
-    ros::init(argc, argv, "headsystem");
-    ros::NodeHandle n("~");
-    ros::Subscriber sub_ethercat = n.subscribe("/ethercat", 1000, &ethercat_callback);
-	run();
-	return 0;
 }
