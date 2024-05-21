@@ -12,6 +12,7 @@
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Bool.h>
 #include <condition_variable>
 #include <unistd.h>
 
@@ -59,7 +60,9 @@ void ethercat_callback(const footstep_planning::Ethercat::ConstPtr& msg);
 footstep_planning::Ethercat ethercatMsg;
 footstep_planning::Footstep footStepMsg;
 ros::Subscriber sub_ethercat;
+ros::Subscriber sub_walkingflag;
 ros::Publisher pub_footstep;
+bool walkingFLag;
 
 xy vecMulC(xy a, double C)
 {
@@ -627,11 +630,16 @@ void ethercat_callback(const footstep_planning::Ethercat::ConstPtr& msg){
     ethercatMsg = *msg;
 }
 
+void walkingflag_callback(const std_msgs::Bool::ConstPtr& msg){
+	walkingFLag = msg->data;
+}
+
 int main(int argc, char **argv){
 	ros::init(argc, argv, "footstepplanning");
 	ros::NodeHandle n("~");
 	ros::Rate poll_rate(100);
 	sub_ethercat = n.subscribe("/ethercat", 1000, &ethercat_callback);
+	sub_walkingflag = n.subscribe("/walkingflag", 1000, &walkingflag_callback);
 	pub_footstep = n.advertise<footstep_planning::Footstep>("/footstep", 1000);
 	while(pub_footstep.getNumSubscribers() == 0){
     	poll_rate.sleep();
