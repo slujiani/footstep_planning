@@ -62,7 +62,7 @@ footstep_planning::Footstep footStepMsg;
 ros::Subscriber sub_ethercat;
 ros::Subscriber sub_walkingflag;
 ros::Publisher pub_footstep;
-bool walkingFLag;
+bool walkingFlag;
 
 xy vecMulC(xy a, double C)
 {
@@ -631,7 +631,7 @@ void ethercat_callback(const footstep_planning::Ethercat::ConstPtr& msg){
 }
 
 void walkingflag_callback(const std_msgs::Bool::ConstPtr& msg){
-	walkingFLag = msg->data;
+	walkingFlag = msg->data;
 }
 
 int main(int argc, char **argv){
