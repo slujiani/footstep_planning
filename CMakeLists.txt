@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 add_message_files(FILES Ethercat.msg)
-add_message_files(FILES FootStep.msg)
+add_message_files(FILES Footstep.msg)
 generate_messages(DEPENDENCIES std_msgs)
 
 ## System dependencies are found with CMake's conventions
@@ -214,6 +214,8 @@ include_directories(
 add_executable(FootstepPlanning
     src/FootstepPlanning.cpp
 )
+
+add_dependencies(FootstepPlanning footstep_planning_generate_messages_cpp)
 
 target_link_libraries(FootstepPlanning ${catkin_LIBRARIES})
 

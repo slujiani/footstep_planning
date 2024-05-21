@@ -8,11 +8,12 @@
 #include<tuple>
 #include<float.h>
 #include "footstep_planning/Ethercat.h"
-#include "footstep_planning/FootStep.h"
+#include "footstep_planning/Footstep.h"
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Bool.h>
 #include <condition_variable>
+#include <unistd.h>
 
 #define vs 0.4	// 直线行走速度，每步米/秒
 #define vc 0.1	// 曲线行走速度，每步米/秒
@@ -56,18 +57,9 @@ std::tuple<posDirect,posDirect> getCurFeet();
 void run();
 void ethercat_callback(const footstep_planning::Ethercat::ConstPtr& msg);
 footstep_planning::Ethercat ethercatMsg;
-footstep_planning::FootStep footStepMsg;
+footstep_planning::Footstep footStepMsg;
 ros::Subscriber sub_ethercat;
 ros::Publisher pub_footstep;
-
-int main(int argc, char **argv){
-	ros::init(argc, argv, "footstepplanning");
-	ros::NodeHandle n("~");
-	sub_ethercat = n.subscribe("/ethercat", 1000, &ethercat_callback);
-	pub_footstep = n.advertise<footstep_planning::FootStep>("/footstep", 1000);
-	run();
-	return 0;
-}
 
 xy vecMulC(xy a, double C)
 {
@@ -624,8 +616,8 @@ void run(){
 		output.push_back(Q[3]);
 		output.push_back(nextStepTime);
 	}
-	std::string filesim = "file_sim.csv";
-	std::string filereal = "file_real.csv";
+	std::string filesim = "file/file_sim.csv";
+	std::string filereal = "file/file_real.csv";
 	dataToFile(recordcal, filesim);
 	dataToFile(recordreal, filereal);
 	outToEthercat(output);
@@ -633,4 +625,18 @@ void run(){
 
 void ethercat_callback(const footstep_planning::Ethercat::ConstPtr& msg){
     ethercatMsg = *msg;
+}
+
+int main(int argc, char **argv){
+	ros::init(argc, argv, "footstepplanning");
+	ros::NodeHandle n("~");
+	ros::Rate poll_rate(100);
+	sub_ethercat = n.subscribe("/ethercat", 1000, &ethercat_callback);
+	pub_footstep = n.advertise<footstep_planning::Footstep>("/footstep", 1000);
+	while(pub_footstep.getNumSubscribers() == 0){
+    	poll_rate.sleep();
+	}
+	run();
+	ros::spin();
+	return 0;
 }
