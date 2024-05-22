@@ -55,7 +55,7 @@ xy addGaussinToSim(xy goalPos);
 void dataToFile(std::vector<posDirect>Path, std::string fname);
 void outToEthercat(std::vector<float> outp);
 std::tuple<posDirect,posDirect> getCurFeet();
-void run();
+int run();
 void ethercat_callback(const footstep_planning::Ethercat::ConstPtr& msg);
 footstep_planning::Ethercat ethercatMsg;
 footstep_planning::Footstep footStepMsg;
@@ -500,7 +500,6 @@ void outToEthercat(std::vector<float> outp)
 	footStepMsg.nextFifthStepOrientY=outp[37];
 	footStepMsg.nextFifthStepOrientZ=outp[38];
 	footStepMsg.nextFifthStepTime=outp[39];
-
 	pub_footstep.publish(footStepMsg);
 }
 std::tuple<posDirect,posDirect> getCurFeet()
@@ -524,7 +523,7 @@ std::tuple<posDirect,posDirect> getCurFeet()
 	right.direct={1-2*q2*q2-2*q3*q3,2*q1*q2+2*q0*q3};
 	return std::make_tuple(left,right);
 }
-void run(){
+int run(){
 	std::vector<posDirect> leftPath, rightPath;
 	std::string fname1 = "file/leftPath.csv";
 	std::string fname2 = "file/rightPath.csv";
@@ -534,7 +533,7 @@ void run(){
 	double lenRight, lenRline, lenRcurve;
 	std::tie(lenLeft, lenLline, lenLcurve) = getRoadLen(leftPath);
 	std::tie(lenRight, lenRline, lenRcurve) = getRoadLen(rightPath);
-	int FR = -1;	//到达终点的标志
+	int FR = -1;	//到达终点的标志 =0 when reach the final
 	int SC = 0;	// 在行走中检测的状态变化，从曲线段到直线段变化，或相反
 	int last_SC = 0;
 	int pll = 1;	// 在行走过程中是否出现双足并列的情况
@@ -556,7 +555,7 @@ void run(){
 	std::vector<xyz>lx, ly, lz;
 	std::vector<float>output;
 	int step = 0;
-	while (FR != 0)
+	while (step<5)
 	{
 		//根据当前落足点位置和规划的全部路径和朝向得到下一步双足的落足点位置和方向
 		std::tie(FR, nextStep, nextStepTime,stateChange) = getNextLocat(leftPath, rightPath, leftcur, rightcur, vk, pll, SC);
@@ -573,20 +572,21 @@ void run(){
 			leftcur.direct = nextStep.direct;
 			leftcur.tag = nextStep.tag;
 		}
-		else
+		else if (FR == -1)
 		{
 			//rightcur.pos = addGaussinToSim(nextStep.pos);
 			rightcur.pos = nextStep.pos;
 			rightcur.direct = nextStep.direct;
 			rightcur.tag = nextStep.tag;
 		}
-		
+		else
+		{
+			//arrive at final point
+			
+
+		}
 		//加高斯偏置模拟的实际值
 		recordreal.push_back(nextStep);
-		if (step == 5)
-		{
-			break;
-		}
 		
 
 		SC = stateChange;
@@ -618,12 +618,29 @@ void run(){
 		output.push_back(Q[2]);
 		output.push_back(Q[3]);
 		output.push_back(nextStepTime);
+		if(FR==0)
+		{
+			//arrive at final point
+			for(step;step<5;step++)
+			{
+				output.push_back(nextStep.pos.x);
+				output.push_back(nextStep.pos.y);
+				output.push_back(nextStep.pos.z);
+				output.push_back(Q[0]);
+				output.push_back(Q[1]);
+				output.push_back(Q[2]);
+				output.push_back(Q[3]);
+				output.push_back(nextStepTime);
+			}
+			return FR;
+		}
 	}
 	std::string filesim = "file/file_sim.csv";
 	std::string filereal = "file/file_real.csv";
 	dataToFile(recordcal, filesim);
 	dataToFile(recordreal, filereal);
 	outToEthercat(output);
+	return FR;
 }
 
 void ethercat_callback(const footstep_planning::Ethercat::ConstPtr& msg){
@@ -644,7 +661,15 @@ int main(int argc, char **argv){
 	while(pub_footstep.getNumSubscribers() == 0){
     	poll_rate.sleep();
 	}
-	run();
+	int  reach_final=1;
+	while(reach_final!=0)
+	{
+		if(walkingFlag == true and ethercatMsg.FeetGroundStatus==0x11)
+		{
+			reach_final=run();
+		}
+	}
+	
 	ros::spin();
 	return 0;
 }
