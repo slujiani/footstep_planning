@@ -15,6 +15,7 @@
 #include <std_msgs/Bool.h>
 #include <condition_variable>
 #include <unistd.h>
+#include <thread>
 
 #define vs 0.4	// 直线行走速度，每步米/秒
 #define vc 0.1	// 曲线行走速度，每步米/秒
@@ -651,6 +652,18 @@ void walkingflag_callback(const std_msgs::Bool::ConstPtr& msg){
 	walkingFlag = msg->data;
 }
 
+void run_(){
+	ethercatMsg.FeetGroundStatus=0x11;
+	int  reach_final=1;
+	while(reach_final!=0)
+	{
+		if(walkingFlag == true and ethercatMsg.FeetGroundStatus==0x11)
+		{
+			reach_final=run();
+		}
+	}
+}
+
 int main(int argc, char **argv){
 	ros::init(argc, argv, "footstepplanning");
 	ros::NodeHandle n("~");
@@ -661,15 +674,8 @@ int main(int argc, char **argv){
 	while(pub_footstep.getNumSubscribers() == 0){
     	poll_rate.sleep();
 	}
-	int  reach_final=1;
-	while(reach_final!=0)
-	{
-		if(walkingFlag == true and ethercatMsg.FeetGroundStatus==0x11)
-		{
-			reach_final=run();
-		}
-	}
-	
+    std::thread run_thread(std::thread(static_cast<void(*)()>(run_)));
 	ros::spin();
+	run_thread.join();
 	return 0;
 }
